@@ -4,46 +4,78 @@
 
 <form method="POST" action="{{ url_for('admin.login_view') }}" class="col-md-12 col-lg-12 col-sm-12 rounded">
     <div class="modal-body">
-        {{ form.hidden_tag() }}
+        {{ form.hidden_tag() if form.hidden_tag }}
+        
+        {{ form.csrf_token }}
+
+        {% if form.errors %}
+            {{ form.errors }}
+        {% endif %}
+        
         <fieldset class="form-group">
             
             <div class="form-group">
-                {{ form.login.label(class="form-control-label") }}
-                {% if form.login.errors %}
-                    {{ form.login(class="form-control form-control-lg is-invalid") }}
-                    <div class="invalid-feedback">
-                        {% for error in form.login.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    {{ form.login(class="form-control form-control-lg") }}
+                {% if form.login.type != 'CSRFTokenField' %}
+
+                    {{ form.login.label(class="form-control-label") }}
+                    {% if form.login.errors %}
+                        {{ form.login(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.login.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.login(class="form-control form-control-lg") }}
+                    {% endif %}
+
                 {% endif %}
+
+                
             </div>
 
             <div class="form-group">
-                {{ form.password.label(class="form-control-label") }}
-                {% if form.password.errors %}
-                    {{ form.password(class="form-control form-control-lg is-invalid") }}
-                    <div class="invalid-feedback">
-                        {% for error in form.password.errors %}
-                            <span>{{ error }}</span>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    {{ form.password(class="form-control form-control-lg") }}
+                {% if form.password.type != 'CSRFTokenField' %}
+
+                    {{ form.password.label(class="form-control-label") }}
+                    {% if form.password.errors %}
+                        {{ form.password(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.password.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.password(class="form-control form-control-lg") }}
+                    {% endif %}
+                    
+
                 {% endif %}
+
+                
             </div>
             
             <div class="form-check">
-                {{ form.remember(class="form-check-input") }}
-                {{ form.remember.label(class="form-check-label") }}
+                {% if form.remember.type != 'CSRFTokenField' %}
+
+                    {{ form.remember(class="form-check-input") }}
+                    {{ form.remember.label(class="form-check-label") }}
+
+                {% endif %}
+
+               
             </div>
 
         </fieldset>
 
         <div class="form-group">
-            {{ form.submit(class="btn btn-outline-info") }}
+            {% if form.submit.type != 'CSRFTokenField' %}
+
+                {{ form.submit(class="btn btn-outline-info") }}
+
+            {% endif %}
+
+            
 
             <small class="text-muted ml-2">
                 <a href="{{ url_for('admin.register_view') }}">Forgot Password?</a>

@@ -6,6 +6,12 @@
                     
     <div class="modal-body">
         {{ form.hidden_tag() }}
+
+        {% if form.errors %}
+            {{ form.errors }}
+        {% endif %}
+
+        {{ form.csrf_token }}
         
         <fieldset class="form-group">
             
