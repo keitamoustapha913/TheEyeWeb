@@ -1,0 +1,75 @@
+
+
+<!-- The Modal Edit button in History Index -->
+<div class="modal" id="myModalEdit">
+                        
+    <div class="modal-dialog modal-lg">
+
+        <div class="modal-content">
+
+            <!-- Modal body -->
+            <div class="modal-body">
+                <div class="container-fluid">  
+                    <form method="POST" id="EditForm">
+                        <div class="card">
+                            
+                            <div class="card-header d-flex justify-content-center">Image</div>
+                            <div class="card-body d-flex justify-content-center" id="image_card"><img src="/static/files/history_img/5987a56a-602d-11e9-997c-a088b4f3a790_TE_Ro19n3T3TgJHOmA77Oeh_avR_1.jpg" class="img-fluid img-thumbnail d-flex justify-content-center " style="height: 20vh;" alt="Sheep"></div>
+                        </div>
+
+                        <br />
+
+                        <div class="form-row text-center"> 
+
+                            <label for="form_part_label" > Part Label </label>                                            
+                            <input type="text" class="form-control" id="form_part_label" placeholder="Enter Part Label" name="PartLabel" >
+                                                                        
+                        </div>
+
+                        <div class="form-row">
+                            <div class="col">
+
+                            <label for="form_avgrating" class="my-1">Quality Rating </label>
+                            <select class="custom-select mr-sm-2 " id="form_avgrating" >
+                                <option id="inlineFormCustomDefaultSelected" selected hidden >Selected</option>
+                                <option value="1" >1</option>
+                                <option value="2" >2</option>
+                                <option value="3" >3</option>
+                                <option value="4" >4</option>
+                                <option value="5" >5</option>
+                            </select>
+
+                            </div>
+
+                            <div class="col">
+
+                                <label for="form_qpred" class="my-1" >Quality Predicted </label>                                            
+                                <input disabled type="text" class="form-control" id="form_qpred" placeholder="Prediction" name="Prediction">
+                                
+                            </div>
+                        </div>                                        
+                    
+                        <br />
+                    
+                        <div class="form-group row ">
+
+                            <div class="col-sm-10">
+
+                                <button type="submit" id ="btn_submit_form" class="btn btn-primary ">Submit</button>
+
+                            </div>
+
+                            <button type="button" id ="btn_hide_modal" class=" btn btn-secondary " > Close </button>
+
+                        </div>
+
+                    </form>
+                    
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+    
+</div>

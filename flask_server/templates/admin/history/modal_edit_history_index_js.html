@@ -1,0 +1,94 @@
+
+
+
+<script>
+
+    $(document).ready(function() {
+
+        // On click Edit Button on Table
+        $(document).on('click', '.EditButton', function(event) { 
+
+            // Collecting selected table row values
+            var edit_id = $(this).attr('edit_id'); 
+            var path = $('#path'+edit_id).text();
+            var label = $('#label'+edit_id).text();
+            var avgrating = $('#avgrating'+edit_id).text();
+            var qpred = $('#qpred'+edit_id).text();
+
+            $('#image'+edit_id +' img').css({"width":"auto","height":"20vh"}) 
+            var image = $('#image'+edit_id).html();
+            $('#image'+edit_id +' img').css({"width":"20vw","height":"auto"}) 
+
+            //console.log(avgrating)
+            // Setting the modal fields with selected table row values 
+            $("#myModalEdit").modal('show');
+            $('#image_card').html(image);
+            
+            $("#inlineFormCustomDefaultSelected").text("Default " + avgrating);
+            
+            $("#form_qpred").attr("value", qpred);
+            $("#form_part_label").attr("value", label);
+            $("#inlineFormCustomDefaultSelected").attr("value", avgrating);
+
+
+            // close/Hide modal form Edit 
+            $('#btn_hide_modal').click( function () {
+
+                $("#myModalEdit").modal('hide');
+
+            });
+
+            // Submit Modal form Edit 
+            $('#btn_submit_form').click( function (e) {
+
+                e.preventDefault();
+
+                var partlabel = $('#form_part_label').val();
+                var part_form_rating = $('#form_avgrating').val();
+                
+                console.log(partlabel);
+                console.log(edit_id);
+                console.log("part_form_rating ",part_form_rating);
+
+                
+                $.ajax({
+                    url : '/history/edit',
+                    type : 'POST',
+                    data : { edit_id : edit_id, partlabel : partlabel },
+                    success: function(data) {
+
+                        console.log(data)
+                        $("#myModalEdit").modal('hide');
+                        console.log(data.edit_id)
+                        console.log(data.partlabel)
+
+                        $('#label'+ data.edit_id ).text(data.partlabel);
+                    
+                        
+                        //$('#TableRowSection-'+edit_id).html(data);
+                        
+                    
+                    }
+                    
+                });
+
+                
+
+                
+
+            
+            });
+
+
+        });
+
+
+
+    
+
+
+
+    });
+
+
+</script>

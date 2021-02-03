@@ -1,0 +1,55 @@
+{% extends 'admin/master.html' %}
+
+
+{% block authentication_control %}
+<div class="navbar-nav">
+    {% if current_user.is_authenticated %}
+      <a class="nav-item nav-link" href="{{ url_for('admin.logout_view') }}">Logout</a>
+    {% else %}
+      <a class="nav-item nav-link" href="{{ url_for('admin.login_view') }}"  >Login</a>
+      <a class="nav-item nav-link" href="{{ url_for('admin.register_view') }}" >Register</a>
+    {% endif %}
+  </div>
+{% endblock authentication_control %}
+
+
+
+{% block body %}
+{{ super() }}
+
+
+<div class="container-fluid">
+
+    <div>
+        {% if current_user.is_authenticated %}
+            <h1> TheEye </h1>
+            <p class="lead">
+                Authentication
+            </p>
+            <p>
+                Real time quality metrics. This system is able to learn to rank the quality of anything after a small automated training period, using state-of-the-art Auto-ML technics.
+            </p>
+        {% else %}
+            <h1> TheEye </h1>
+
+            <p>
+                Real time quality metrics. This system is able to learn to rank the quality of anything after a small automated training period, using state-of-the-art Auto-ML technics.
+            </p>
+
+
+            {% block authentication_form_section %}
+
+            {% endblock authentication_form_section %}
+
+
+
+        {% endif %}
+    </div>
+
+    <a class="btn btn-primary" href="{{ url_for('admin.index') }}"><i class="icon-arrow-left icon-white"></i> Back</a>
+</div>
+
+
+{% endblock body %}
+
+

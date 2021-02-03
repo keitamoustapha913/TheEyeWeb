@@ -1,0 +1,160 @@
+{% extends "admin/index.html" %}
+
+{% block authentication_form_section %}
+
+<form method="POST" action="{{ url_for('admin.login_view') }}" class="col-md-12 col-lg-12 col-sm-12 rounded">
+                    
+    <div class="modal-body">
+        {{ form.hidden_tag() }}
+        
+        <fieldset class="form-group">
+            
+            
+            <div class="form-group">
+                {{ form.login.label(class="form-control-label") }}
+                {% if form.login.errors %}
+                    {{ form.login(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.login.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.login(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.password.label(class="form-control-label") }}
+                {% if form.password.errors %}
+                    {{ form.password(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.password.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.password(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                {{ form.confirm_password.label(class="form-control-label") }}
+                {% if form.confirm_password.errors %}
+                    {{ form.confirm_password(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.confirm_password.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.confirm_password(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+
+        </fieldset>
+
+        <div class="form-group">
+            {{ form.submit(class="btn btn-outline-info") }}
+
+        </div>
+
+        <div class="border-top pt-3">
+            <small class="text-muted">
+                Already Have An Account? <a class="ml-2" href="{{ url_for('admin.login_view') }}">Sign In</a>
+            </small>
+        </div>
+
+</form>
+
+
+
+<!-- <div class="modal fade" id="my_register_Modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <legend class=" d-flex justify-content-center"> {{ auth_title }} Below </legend>
+            </div>
+
+            <div class="modal-body">
+                
+                <form method="POST" action="{{ url_for('admin.login_view') }}" class="col-md-12 col-lg-12 col-sm-12 rounded">
+                    
+                    <div class="modal-body">
+                        {{ form.hidden_tag() }}
+                        
+                        <fieldset class="form-group">
+                            
+                            
+                            <div class="form-group">
+                                {{ form.login.label(class="form-control-label") }}
+                                {% if form.login.errors %}
+                                    {{ form.login(class="form-control form-control-lg is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.login.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ form.login(class="form-control form-control-lg") }}
+                                {% endif %}
+                            </div>
+                
+                            <div class="form-group">
+                                {{ form.password.label(class="form-control-label") }}
+                                {% if form.password.errors %}
+                                    {{ form.password(class="form-control form-control-lg is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.password.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ form.password(class="form-control form-control-lg") }}
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group">
+                                {{ form.confirm_password.label(class="form-control-label") }}
+                                {% if form.confirm_password.errors %}
+                                    {{ form.confirm_password(class="form-control form-control-lg is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.confirm_password.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ form.confirm_password(class="form-control form-control-lg") }}
+                                {% endif %}
+                            </div>
+                
+                        </fieldset>
+                
+                        <div class="form-group">
+                            {{ form.submit(class="btn btn-outline-info") }}
+                
+                        </div>
+                
+                        <div class="border-top pt-3">
+                            <small class="text-muted">
+                                Already Have An Account? <a class="ml-2" href="{{ url_for('admin.login_view') }}">Sign In</a>
+                            </small>
+                        </div>
+            
+                </form>
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+ -->
+{% endblock authentication_form_section %}

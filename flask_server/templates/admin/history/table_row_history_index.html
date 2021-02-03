@@ -1,0 +1,16 @@
+
+
+
+    <th scope="row" id="id{{ data.id }}">{{data.id}}</th>
+    <td id="image{{ data.id }}"> <img src="{{ url_for('static', filename='{}'.format(data.full_store_path)) }}" class="img-fluid img-thumbnail d-flex justify-content-center "  style="width: 20vw;"  alt="Sheep"> </img> </td>
+    <td id="avgrating{{ data.id }}">{{data.avgrating}}</td>
+    <td id="path{{ data.id }}"> {{data.path}}</td>
+    <td id="label{{ data.id }}"> {{data.label}}</td>
+    <td id="qpred{{ data.id }}" >{{data.qpred}}</td>
+    <td >
+        <button type="button" class="btn btn-primary btn-sm EditButton" id="edit{{ data.id }}" edit_id="{{ data.id }}">Edit</button>
+
+        <a href="/delete/{{data.id}}" class="btn btn-danger btn-delete btn-sm" id="delete{{ data.id }}" >delete</a>
+    </td>
+
+
