@@ -36,3 +36,24 @@
   </button>
 </form>
 {% endmacro %}
+
+{% macro train_row(action, row_id, row) %}
+<form class="icon" method="POST" action="{{ get_url('.train_row_view') }}">
+  
+  {% if train_row_form.errors %}
+      {{ train_row_form.errors }}
+  {% endif %}
+
+  {{ train_row_form.id(value=get_pk_value(row)) }}
+  {{ train_row_form.url(value=return_url) }}
+  {% if train_row_form.csrf_token %}
+  {{ train_row_form.csrf_token }}
+  {% elif csrf_token %}
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  {% endif %}
+  <button onclick="return faHelpers.safeConfirm('{{ _gettext('Are you sure you want to train this image?') }}');" title="{{ _gettext('Train this image') }}">
+    <span class="fa fa-refresh"></span>
+  </button>
+</form>
+{% endmacro %}
+

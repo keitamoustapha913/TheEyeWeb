@@ -68,10 +68,10 @@ admin = Admin(app, name='TheEye', \
 admin.add_view(MyModelView(User, db.session))
 
 # Expert Dashboard 
-admin.add_view(MyExpertDashboard(ExpertModel,db.session))
+admin.add_view(MyExpertDashboard(model = ExpertModel, session = db.session , endpoint= 'expertmodel'))
 
 
-admin.add_view(MyModelView(Role, db.session))
+admin.add_view(MyModelView(model = Role, session = db.session))
 admin.add_view(ImageView(Image, db.session))
 
 

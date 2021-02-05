@@ -1,4 +1,4 @@
-from flask import redirect, url_for, request, jsonify, abort,render_template
+from flask import redirect,flash,make_response, url_for, request, jsonify, abort,render_template
 #from flask_server.model_views.expert_dashboard.exp_model import ExpertModel
 
 from flask_admin.contrib.sqla import ModelView
@@ -8,13 +8,20 @@ import flask_login as login
 
 from flask_admin import helpers, expose, expose_plugview
 
-
 import os
 import os.path as op
 from sqlalchemy.event import listens_for
 from jinja2 import Markup
 
 from flask_admin import form as admin_form
+
+# Actions
+from flask_admin.babel import gettext
+from flask_admin.model import template
+from flask_admin.model.template import EndpointLinkRowAction, LinkRowAction, TemplateLinkRowAction
+
+from flask_admin.helpers import (get_form_data, validate_form_on_submit,
+                                 get_redirect_target, flash_errors)
 
 # Create directory for file fields to use
 file_path = op.join(op.dirname(__file__), 'files')
@@ -27,6 +34,12 @@ except OSError as e:
     #log.error("Exception occurred", exc_info=True)
     #log.exception(f"Exception occurred{e}")
     pass
+
+class TrainRowAction(TemplateLinkRowAction):
+    def __init__(self):
+        super(TrainRowAction, self).__init__(
+            template_name= 'row_actions.train_row', 
+            title= gettext('Train The Image Record'))
 
 
 # Create customized base view class
@@ -88,7 +101,11 @@ class MyExpertDashboard(ModelView):
     details_modal = True
     """Setting this to true will display the details_view as a modal dialog."""
 
+    # Pagination 
+    can_set_page_size  = True # Edit number of items which can be ( 20 / 50 / 100 ) per page 
     
+    
+
     def is_accessible(self):
 
         return True
@@ -97,6 +114,7 @@ class MyExpertDashboard(ModelView):
                 login.current_user.is_authenticated
         )
         """
+    
     def _handle_view(self, name, **kwargs):
         """
         Override builtin _handle_view in order to redirect users when a view is not accessible.
@@ -128,3 +146,83 @@ class MyExpertDashboard(ModelView):
                                       base_path=file_path,
                                       thumbnail_size=(100, 100, True))
     }
+
+    # addding an extra row Action 
+    """
+    column_extra_row_actions = [
+                    EndpointLinkRowAction(icon_class = 'fa fa-refresh', endpoint= '.my_action_f', title="Train it", )
+                ]
+    """
+    def get_list_row_actions(self):
+        """
+            Return list of row action objects, each is instance of
+            :class:`~flask_admin.model.template.BaseListRowAction`
+        """
+        actions = []
+
+        if self.can_view_details:
+            if self.details_modal:
+                actions.append(template.ViewPopupRowAction())
+            else:
+                actions.append(template.ViewRowAction())
+
+        if self.can_edit:
+            if self.edit_modal:
+                actions.append(template.EditPopupRowAction())
+            else:
+                actions.append(template.EditRowAction())
+
+        if self.can_delete:
+            actions.append(template.DeleteRowAction())
+        actions.append(TrainRowAction())
+        return actions + (self.column_extra_row_actions or [])
+
+    @expose('/')
+    def index_view(self):
+        
+        self._template_args['train_row_form'] = self.delete_form()
+
+        return super(MyExpertDashboard, self).index_view()
+
+    @expose('/my_action')
+    def my_action_f(self): 
+        actions, actions_confirmation = self.get_actions_list()
+        print(f"\n \n \n Return a list and a dictionary of allowed actions. Actions :  { actions} \n Confirmations {actions_confirmation} \n \n \n")
+        return super(MyExpertDashboard, self).index_view()
+
+
+    @expose('/trainit/', methods=('POST',))
+    def train_row_view(self):
+        """
+            trainit model view. Only POST method is allowed.
+        """
+        return_url = get_redirect_target() or self.get_url('.index_view')
+
+        # Using the default delete form as the train_row form 
+      
+        train_row_form = self.delete_form()
+
+        if self.validate_form(train_row_form):
+            # id is InputRequired()
+            id = train_row_form.id.data
+
+            model = self.get_one(id)
+
+            if model is None:
+                flash(gettext('Record does not exist.'), 'error')
+                return redirect(return_url)
+
+            # message is flashed from within train_row_model if it fails
+            
+            flash(f'Image #{id} was successfully trained .','success')
+            #return make_response(jsonify({"fullpath": model.full_store_path}), 200)
+            
+        else:
+            flash_errors(train_row_form, message='Failed to delete record. %(error)s')
+
+        return redirect(return_url)
+
+
+
+
+

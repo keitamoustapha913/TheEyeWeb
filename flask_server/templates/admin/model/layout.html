@@ -96,6 +96,7 @@
         {{ page_size }} {{ _gettext('items') }}<b class="caret"></b>
     </a>
     <div class="dropdown-menu">
+      <a class="dropdown-item{% if page_size == 10 %} active{% endif %}" href="{{ generator(10) }}">10 {{ _gettext('items') }}</a>
       <a class="dropdown-item{% if page_size == 20 %} active{% endif %}" href="{{ generator(20) }}">20 {{ _gettext('items') }}</a>
       <a class="dropdown-item{% if page_size == 50 %} active{% endif %}" href="{{ generator(50) }}">50 {{ _gettext('items') }}</a>
       <a class="dropdown-item{% if page_size == 100 %} active{% endif %}" href="{{ generator(100) }}">100 {{ _gettext('items') }}</a>

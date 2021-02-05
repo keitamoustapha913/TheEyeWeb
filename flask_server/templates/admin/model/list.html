@@ -56,7 +56,9 @@
             {{ model_layout.search_form() }}
         </li>
         {% endif %}
-        {% block model_menu_bar_after_filters %}{% endblock %}
+
+        {% block model_menu_bar_after_filters %}{% endblock model_menu_bar_after_filters %}
+        
     </ul>
     {% endblock %}
 
