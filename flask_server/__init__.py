@@ -8,6 +8,7 @@ from flask_admin.contrib.sqla import ModelView
 from flask_admin import helpers as admin_helpers
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
+import os
 
 import pandas as pd 
 from datetime import datetime
@@ -104,14 +105,16 @@ def create_app(config_class=Config):
             db.session.add(image)
 
         db.session.commit()
-
-        df = pd.read_csv('/home/keitahp/Documents/symme_hp/phase_up/TheEye_flask/TheEye_Web/flask_server/static/boot/PO_April2019-hand_all_stored_name_change.csv', sep=',')
+        # /home/devinsider/Documents/Projects/SymmeEye/Application/Eye_App/TheEyeWeb/flask_server/static/Data/csv/Init_firebase_extraction/Init_csv_to_server/init_flask_csv_labeled_82c766d6-72c8-11eb-95b7-00155ddf6e13.csv
+        df = pd.read_csv(  os.path.join( os.environ.get('SYMME_EYE_DATA_CSV_DIR') , "Init_firebase_extraction", "Init_csv_to_server", "init_flask_csv_full_82c766d6-72c8-11eb-95b7-00155ddf6e13.csv" ), sep=',')
+        
         print(df.head())
         for i in df.index:
-            avgrating = int(df.at[i,'avgRating'])#/home/keitahp/Documents/symme_hp/phase_up/TheEye_flask/TheEye_Web/flask_server/static/files/history_img/test/0afe2ce4-6054-11e9-997c-a088b4f3a790_TE_Ro19n3T3TgJHOmA77Oeh_avR_5.jpg
-            path = df.at[i,'stored_img_name']
+            avgrating = int(df.at[i,'Labels'])
+            path = df.at[i,'Filename']   #Filename,FileLinks,Labels
             qpred = df.at[i,'qpred']
-            full_store_path = 'files/history_img/'+path
+            ImgFolder = df.at[i,'ImgFolder']  
+            full_store_path = f"Data/Images/Init_firebase_extraction/Init_Images_Download/{ImgFolder}/{path}"
             ExpertModel_db = ExpertModel(avgrating = avgrating, path=path, qpred = qpred, full_store_path = full_store_path )
             db.session.add(ExpertModel_db)
         
