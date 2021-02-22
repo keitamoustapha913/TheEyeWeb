@@ -6,6 +6,9 @@ class Config:
     # Create dummy secrey key so we can use sessions
     SECRET_KEY = '123456790'
 
+    DEBUG = True
+    TESTING = False
+    ENV ='development'
     # Create in-memory database
     DATABASE_FILE = 'sample_db.sqlite'
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + DATABASE_FILE
