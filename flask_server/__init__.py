@@ -59,6 +59,8 @@ def load_user(user_id):
 
 from flask_server.Home_Index.views import MyModelView,ImageView
 from flask_server.Model_Views.expert_dashboard import MyExpertDashboard
+from flask_server.Model_Views.Camera_Dashboard import Camera_Dashboard
+
 from flask_server.Home_Index import MyAdminIndexView
 
 admin = Admin(app, name='TheEye', \
@@ -67,6 +69,10 @@ admin = Admin(app, name='TheEye', \
 
 
 admin.add_view(MyModelView(User, db.session))
+
+# Camera_Dashboard
+admin.add_view(Camera_Dashboard(name="Camera Dashboard", endpoint= 'camera_dashboard'))
+
 
 # Expert Dashboard 
 admin.add_view(MyExpertDashboard(model = ExpertModel, session = db.session , endpoint= 'expertmodel'))

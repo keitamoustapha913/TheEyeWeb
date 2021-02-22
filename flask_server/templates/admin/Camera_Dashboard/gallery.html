@@ -1,0 +1,32 @@
+{% extends 'admin/master.html' %}
+
+
+{% block body %}
+
+    <div class="container-fluid">
+
+        <div class="row">
+    
+            <div class="col-lg-12">
+                <h1 class="page-header">Thumbnail Gallery</h1>
+            </div>
+            
+            <hr>
+            
+        </div>
+      
+    </div>
+
+    {% for image_name in image_names %}
+    <div class="row d-flex justify-content-center">    
+        <img class="img-responsive img-thumbnail " src="{{url_for('camera_dashboard.send_image', filename=image_name)}}" style="width: 50vw;">
+    </div>
+    {% endfor %}
+
+{% endblock %}
+
+
+{% block my_js %}
+
+
+{% endblock my_js %}
