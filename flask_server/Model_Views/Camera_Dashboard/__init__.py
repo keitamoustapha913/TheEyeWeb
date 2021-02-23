@@ -5,7 +5,7 @@ from flask.views import MethodView
 from flask_admin import helpers, expose, expose_plugview
 from flask_login import current_user
 import os
-
+import glob
 
 import os
 import time
@@ -14,7 +14,7 @@ import uuid
 import cv2  # pip install opencv-python
 import numpy as np  # pip install numpy
 
-from arena_api.system import system
+#from arena_api.system import system
 
 
 
@@ -183,18 +183,32 @@ class Camera_Dashboard(BaseView):
                 # login
                 return redirect(url_for('admin.login_view', next=request.url))
     
-    @expose('/upload/<filename>', methods=( "GET", "POST",))
-    def send_image(self, filename):
-        return send_from_directory(os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"Camera_Capture" ), filename)
+    @expose('/upload/<directory>/<filename>', methods=( "GET", "POST",))
+    def send_image(self, directory , filename):
+        if directory == 'None':
+            return send_from_directory(os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"Camera_Capture" ), f"{filename}")
+
+        return send_from_directory(os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"Camera_Capture" ), f"{directory}/{filename}")
 
     @expose('/upload/', methods=("POST",))
     def upload(self): #/home/devinsider/Documents/Projects/SymmeEye/Application/Eye_App/TheEyeWeb/flask_server/static/Data/Images/Camera_Capture
-        target = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"Camera_Capture" )
+        img_id = uuid.uuid1()
+        
+        target = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"Camera_Capture" , f'{img_id}')
         print(target)
+        try:
+            os.makedirs(target)
+        except OSError as oserror:
+            print(oserror)
+
+        """
         if not os.path.isdir(target):
             os.makedirs(target)
         else:
             print("Couldn't create upload directory: {}".format(target))
+        """
+        images_names_split = []
+        images_direct_split = []
         print(request.files.getlist("file"))
         for upload in request.files.getlist("file"):
             print(upload)
@@ -204,15 +218,31 @@ class Camera_Dashboard(BaseView):
             print ("Accept incoming file:", filename)
             print ("Save it to:", destination)
             upload.save(destination)
+            images_direct_split.append(f'{img_id}')
+            images_names_split.append(filename)
 
         # return send_from_directory("images", filename, as_attachment=True)
-        return self.render("admin/Camera_Dashboard/complete.html", image_name=filename)
+        #return self.render("admin/Camera_Dashboard/complete.html", image_name=filename)
+        #return self.render('admin/Camera_Dashboard/camera_dashboard.html')
+        return self.render("admin/Camera_Dashboard/gallery.html", directory=images_direct_split, image_names=images_names_split, zip = zip)
 
     @expose('/gallery/', methods=('GET', 'POST'))
     def get_gallery(self,): 
-        image_names = os.listdir(os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'), "Camera_Capture/" ))
-        print(image_names)
-        return self.render("admin/Camera_Dashboard/gallery.html", image_names=image_names)
+        image_names = os.listdir(os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'), "Camera_Capture" ))
+        capture_dir_path = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"Camera_Capture" )
+        images_glob = glob.glob(f"{capture_dir_path}/**/*.jpg",  recursive = True)
+        images_names_split = []
+        images_direct_split = []
+        for image_glob in images_glob: 
+            print(image_glob)
+            image_glob = image_glob.split(sep=f"{capture_dir_path}/")[1]
+            direct_name = os.path.split(image_glob)
+            print(direct_name)
+            images_direct_split.append(direct_name[0])
+            images_names_split.append(direct_name[1])
+
+        print(images_names_split)
+        return self.render("admin/Camera_Dashboard/gallery.html", directory=images_direct_split, image_names=images_names_split, zip = zip)
 
     @expose_plugview('/_api/1')
     class API_v1(MethodView):
@@ -248,16 +278,17 @@ class Camera_Dashboard(BaseView):
         print(f"\n\n Devices used in the example: ")
         # open Thermal 
         cam_therm = create_thermal()
-
+        
+        """
         # Create a device Polar
         devices = create_devices_with_tries()
         device = devices[0]
         print(f"\n\t Polar : {device} ")
-
+        """
 
         capture_therm(cam_therm, directory = directory , img_id = img_id)
 
-        capture_polar(device = device , pixel_format_name = "PolarizedAngles_0d_45d_90d_135d_BayerRG8" ,directory = directory, img_id = img_id )
+        #capture_polar(device = device , pixel_format_name = "PolarizedAngles_0d_45d_90d_135d_BayerRG8" ,directory = directory, img_id = img_id )
         print('\nExample finished successfully')
 
         return self.render("admin/Camera_Dashboard/complete.html")

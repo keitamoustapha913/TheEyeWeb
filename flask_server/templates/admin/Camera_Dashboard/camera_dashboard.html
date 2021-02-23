@@ -13,17 +13,18 @@
         
     </div>
 
+    <div class="container-fluid d-flex justify-content-center">
 
-    Hello World from MethodTest!
+        <form id="upload-form" action="{{ url_for('camera_dashboard.upload') }}" method="POST" enctype="multipart/form-data">
 
+            <strong>Files:</strong><br>
+            <input id="file-picker" type="file" name="file" accept="image/*" multiple>
+            <div id="msg"></div>
+            <input type="submit" value="Upload!" id="upload-button">
+        </form>
 
-    <form id="upload-form" action="{{ url_for('camera_dashboard.upload') }}" method="POST" enctype="multipart/form-data">
+    </div>
 
-        <strong>Files:</strong><br>
-        <input id="file-picker" type="file" name="file" accept="image/*" multiple>
-        <div id="msg"></div>
-        <input type="submit" value="Upload!" id="upload-button">
-    </form>
 
 
 
