@@ -257,7 +257,6 @@ class Camera_Dashboard(BaseView):
 
         capture_therm(cam_therm, directory = directory , img_id = img_id)
 
-
         capture_polar(device = device , pixel_format_name = "PolarizedAngles_0d_45d_90d_135d_BayerRG8" ,directory = directory, img_id = img_id )
         print('\nExample finished successfully')
 
