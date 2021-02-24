@@ -14,7 +14,7 @@ import uuid
 import cv2  # pip install opencv-python
 import numpy as np  # pip install numpy
 
-#from arena_api.system import system
+from arena_api.system import system
 
 
 
@@ -82,6 +82,10 @@ def capture_therm(cam_therm, directory = '.',img_id = f'{uuid.uuid1()}'):
         t2 = time.time()
         print(f'\n \nsaving  images in seconds: {t2 -t1 }')
         print(f'Saved image path is: {Path(os.getcwd())/png_colormap_name}')
+
+        image_name = os.path.basename(png_raw_name)
+
+        return image_name
         
     else:
         print('\n\nWARNING: ret_therm is None')
@@ -137,6 +141,7 @@ def capture_polar(device, pixel_format_name = 'PolarizedAolp_BayerRG8' ,director
         # RAW
         t1 = time.time()
         png_raw_name = f'{directory}/from_{pixel_format_name}_raw_to_png_with_opencv_{img_id}.png'
+        
         cv2.imwrite(png_raw_name, nparray_reshaped)
         t2 = time.time()
         print(f'\n \nsaving  images in seconds: {t2 -t1 }')
@@ -152,6 +157,10 @@ def capture_polar(device, pixel_format_name = 'PolarizedAolp_BayerRG8' ,director
         print(f'Saved image path is: {Path(os.getcwd())/png_hsv_name}')
 
         device.requeue_buffer(image_buffer)
+
+        image_name = os.path.basename(png_raw_name)
+
+        return image_name
 
 
 class Camera_Dashboard(BaseView):
@@ -211,12 +220,12 @@ class Camera_Dashboard(BaseView):
         images_direct_split = []
         print(request.files.getlist("file"))
         for upload in request.files.getlist("file"):
-            print(upload)
-            print("{} is the file name".format(upload.filename))
+            #print(upload)
+            #print("{} is the file name".format(upload.filename))
             filename = upload.filename
             destination = "/".join([target, filename])
-            print ("Accept incoming file:", filename)
-            print ("Save it to:", destination)
+            #print ("Accept incoming file:", filename)
+            #print ("Save it to:", destination)
             upload.save(destination)
             images_direct_split.append(f'{img_id}')
             images_names_split.append(filename)
@@ -230,14 +239,14 @@ class Camera_Dashboard(BaseView):
     def get_gallery(self,): 
         image_names = os.listdir(os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'), "Camera_Capture" ))
         capture_dir_path = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"Camera_Capture" )
-        images_glob = glob.glob(f"{capture_dir_path}/**/*.jpg",  recursive = True)
+        images_glob = glob.glob(f"{capture_dir_path}/**/*",  recursive = True)
         images_names_split = []
         images_direct_split = []
         for image_glob in images_glob: 
-            print(image_glob)
+            #print(image_glob)
             image_glob = image_glob.split(sep=f"{capture_dir_path}/")[1]
             direct_name = os.path.split(image_glob)
-            print(direct_name)
+            #print(direct_name)
             images_direct_split.append(direct_name[0])
             images_names_split.append(direct_name[1])
 
@@ -266,30 +275,39 @@ class Camera_Dashboard(BaseView):
         print('\nExample started\n')
 
         img_id = uuid.uuid1()
-        directory = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'), 'Camera_Capture')
-        #directory = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'), 'Camera_Capture', f'{img_id}')
+        #directory = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'), 'Camera_Capture')
+        directory = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'), 'Camera_Capture', f'{img_id}')
 
         try:
-            os.mkdir(directory)
+            os.makedirs(directory)
         except OSError as oserror:
             print(oserror)
             
+
+        
+        images_direct_split = [f'{img_id}', f'{img_id}']
 
         print(f"\n\n Devices used in the example: ")
         # open Thermal 
         cam_therm = create_thermal()
         
-        """
+        
         # Create a device Polar
         devices = create_devices_with_tries()
         device = devices[0]
-        print(f"\n\t Polar : {device} ")
-        """
+        print(f"\n\t Polar : {device} ")        
+        
 
-        capture_therm(cam_therm, directory = directory , img_id = img_id)
+        thermal_name = capture_therm(cam_therm, directory = directory , img_id = img_id)
+        #images_names_split.append(thermal_name)
 
-        #capture_polar(device = device , pixel_format_name = "PolarizedAngles_0d_45d_90d_135d_BayerRG8" ,directory = directory, img_id = img_id )
+        polar_name = capture_polar(device = device , pixel_format_name = "PolarizeMono8" ,directory = directory, img_id = img_id )
+        #images_names_split.append(polar_name)
         print('\nExample finished successfully')
 
-        return self.render("admin/Camera_Dashboard/complete.html")
+        images_names_split = [thermal_name , polar_name]
+
+        #return self.render("admin/Camera_Dashboard/complete.html")
+        return self.render("admin/Camera_Dashboard/gallery.html", directory=images_direct_split, image_names=images_names_split, zip = zip)
+
 
