@@ -53,6 +53,8 @@ except OSError as e:
     log.error("Exception occurred", exc_info=True)
     #log.exception(f"Exception occurred{e}")
 
+
+"""
 img_name = ''
 #/home/keitahp/Documents/symme_hp/phase_up/TheEye_flask/TheEye_Web/flask_server/Admin_blueprint/views.py
 #/home/keitahp/Documents/symme_hp/phase_up/TheEye_flask/TheEye_Web/flask_server/static/admin/files/history_img/test
@@ -66,6 +68,10 @@ for img_path in glob.glob('/home/keitahp/Documents/symme_hp/phase_up/TheEye_flas
     log.debug(f'img_name_strip : {img_name_strip}')
     log.debug(f'label : {label}')
     break
+
+
+"""
+
 
 # Create customized model view class
 class MyModelView(ModelView):
