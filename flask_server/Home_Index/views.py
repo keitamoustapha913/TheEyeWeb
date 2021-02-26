@@ -50,8 +50,10 @@ log.debug(f'file_path:{file_path}')
 try:
     os.mkdir(file_path)
 except OSError as e:
-    log.error("Exception occurred", exc_info=True)
+    #log.error("Exception occurred", exc_info=True)
     #log.exception(f"Exception occurred{e}")
+    pass
+    
 
 
 """
