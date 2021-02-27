@@ -26,6 +26,7 @@ from flask_admin.actions import action
 from flask_admin.babel import gettext, ngettext
 from .Cam_model import CameraDashboard
 from flask_admin.contrib.sqla import ModelView
+from datetime import datetime
 
 from flask_server import db
 from flask_server.Model_Views.Camera_Dashboard.Cam_model import CameraDashboard
@@ -78,30 +79,34 @@ class MyCamera_Dashboard(ModelView):
     }
 
     " List of column to show in the table"
-    column_display_pk = False
-    column_list = (  'preview' , 'avgrating', 'qpred', 'label', 'filename', 'full_thumbnails_store_path','prev_full_store_path', 'current_full_store_path' )
+    column_display_pk = True
+    column_list = (  'preview' , 'avgrating', 'qpred', 'label', 'filename', 'created_at', )
     #column_exclude_list = ('full_store_path')
 
     """Searchable columns """
     column_searchable_list = ( 'label', 'filename' )
 
-    column_editable_list = ( 'avgrating', 'label')
+    column_editable_list = (  'avgrating','label',)
 
     column_filters = ('avgrating', 'qpred')
 
     # Forms
-    form_columns = ( 'filename', 'label', 'avgrating','qpred' , 'current_full_store_path' )
+    form_columns = ( 'filename', 'label', 'avgrating','qpred',  )
 
     form_widget_args = {
         'filename': {
-            'readonly': False,
+            'readonly': True,
         },
         'qpred': {
             'readonly': True
         },
         
     }
-
+    # Export to csv
+    can_export = True
+    export_types = ['csv']
+    column_export_list = ['id', 'filename', 'label','avgrating','qpred','current_full_store_path' , 'full_thumbnails_store_path' ]
+    export_max_rows = 10000
     # Index view html template
     # templates/
     list_template = 'admin/Camera_Dashboard/list.html'
@@ -289,8 +294,10 @@ class MyCamera_Dashboard(ModelView):
 
         img_id = uuid.uuid1()
         #directory = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'), 'Camera_Capture')
-        directory = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'), 'Camera_Capture', f'{img_id}')
-        thumb_directory =  os.path.join(os.environ.get('SYMME_EYE_APPLICATION_DIR'), 'Data/Images/thumbnails')  
+        from_static_imgs_directory = os.path.join( 'Data', 'Images', 'Camera_Capture', f'{img_id}')
+        from_static_thumb_directory = os.path.join( 'Data', 'Images', 'thumbnails')
+        directory = os.path.join(os.environ.get('SYMME_EYE_APPLICATION_DIR'), from_static_imgs_directory)
+        thumb_directory =  os.path.join(os.environ.get('SYMME_EYE_APPLICATION_DIR'), from_static_thumb_directory)  
         try:
             os.makedirs(directory)
         except OSError as oserror:
@@ -306,30 +313,34 @@ class MyCamera_Dashboard(ModelView):
         
         
         # Create a device Polar
-        #devices = create_devices_with_tries()
-        #device = devices[0]
-        #print(f"\n\t Polar : {device} ")        
+        devices = create_devices_with_tries()
+        device = devices[0]
+        print(f"\n\t Polar : {device} ")        
         
 
         thermal_name = capture_therm(cam_therm, directory = directory , 
                                       img_id = img_id)
         #images_names_split.append(thermal_name)
 
-        #polar_name = capture_polar(device = device , pixel_format_name = "PolarizeMono8" ,directory = directory, img_id = img_id )
+        polar_name = capture_polar(device = device , pixel_format_name = "PolarizedAngles_0d_45d_90d_135d_BayerRG8" ,directory = directory, img_id = img_id )
         #images_names_split.append(polar_name)
         print('\nExample finished successfully')
 
-        #images_names_split = [thermal_name , polar_name]
-        images_names_split = [thermal_name ]
+        images_names_split = [thermal_name , polar_name]
+        #images_names_split = [thermal_name ]
         images_names_string = ','.join(images_names_split)
-        thumb_name = thumb_gen( imgs_names_list = images_names_split ,directory = thumb_directory, img_id = img_id)
+        thumb_name = thumb_gen( imgs_names_list = images_names_split ,thumb_directory = thumb_directory,current_directory = directory, img_id = img_id)
         
-        current_full_store_path_directory = directory 
-        full_thumbnails_store_path =  os.path.join(thumb_directory, f"{thumb_name}")
-        CameraDashboardModel_db = CameraDashboard( full_thumbnails_store_path = full_thumbnails_store_path, current_full_store_path = current_full_store_path_directory,filename = images_names_string )
+        current_full_store_path_directory = from_static_imgs_directory 
+        full_thumbnails_store_path =  os.path.join(from_static_thumb_directory, f"{thumb_name}")
+        CameraDashboardModel_db = CameraDashboard( full_thumbnails_store_path = full_thumbnails_store_path, current_full_store_path = current_full_store_path_directory,filename = images_names_string , created_at = datetime.now())
         db.session.add(CameraDashboardModel_db)
         db.session.commit()
+
+        flash(f"Image #{img_id} was successfully captured")
         #return self.render("admin/Camera_Dashboard/complete.html")
-        return self.render("admin/Camera_Dashboard/gallery.html", directory=[f'{img_id}'], image_names=[thumb_name], zip = zip)
+        #return self.render("admin/Camera_Dashboard/gallery.html", directory=[f'{img_id}'], image_names=[thumb_name], zip = zip)
+        result = {'result':'success'}
+        return jsonify(result)
 
 

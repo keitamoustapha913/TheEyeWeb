@@ -19,7 +19,7 @@ import numpy as np  # pip install numpy
 
 def create_thermal():
     # Create device Thermal
-    cam_therm = cv2.VideoCapture(0)
+    cam_therm = cv2.VideoCapture(0, cv2.CAP_V4L2)
     if not cam_therm.isOpened():
         print('\n\nWARNING: Thermal Cam is not Opened')
         exit()
