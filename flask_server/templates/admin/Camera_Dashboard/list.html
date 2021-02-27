@@ -202,7 +202,22 @@
                         type : 'POST',
                         url : "{{ url_for('camera_dashboard.camera_capture') }}",
                         contentType: 'application/json;charset=UTF-8',
-                        data : {'data':clicked}
+                        data : {'data':clicked},
+
+                        success: function(data) {
+
+                                            console.log(data.result);
+                                            window.location.href = "{{ url_for('camera_dashboard.index_view') }}" ;
+                                            /*
+                                            $.get("{{ url_for('camera_dashboard.index_view') }}", 
+                                                        function(data, status){
+                                                        console.log.log("Image Capture status : " + status) ;
+                                                        alert("Img Captured: " + "\nStatus: " + status);
+                                                });
+
+                                            */
+                                   
+                                }
                         });
                 });
             });

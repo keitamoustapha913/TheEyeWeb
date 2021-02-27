@@ -33,14 +33,14 @@ def copy_images(imgs_names_list = [] , current_directory = '.', new_directory = 
 
 
 
-def thumb_gen( imgs_names_list = [] ,directory = '.', img_id = f'{uuid.uuid1()}'):
+def thumb_gen( imgs_names_list = [] , thumb_directory = '',current_directory = '',  img_id = f'{uuid.uuid1()}'):
 
 
     #directory = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'), 'Camera_Capture', f'{directory}')
     imgs_list = []
     for img_name in imgs_names_list:
         # creating a object  
-        image = cv2.imread(os.path.join(directory, f'{img_name}' ), cv2.IMREAD_UNCHANGED)
+        image = cv2.imread(os.path.join(current_directory, f'{img_name}' ), cv2.IMREAD_UNCHANGED)
 
         dim = (320, 45)
         # perform the actual resizing of the image and show it
@@ -48,8 +48,8 @@ def thumb_gen( imgs_names_list = [] ,directory = '.', img_id = f'{uuid.uuid1()}'
         imgs_list.append(resized)
 
     img_h_resize = hconcat_resize_min( imgs_list )
-    thumb_name = thumbgen_filename(  f"{img_id}" )
+    thumb_name = thumbgen_filename(  f"{img_id}.jpg" )
 
-    cv2.imwrite(os.path.join(directory, thumb_name ) , img_h_resize)
+    cv2.imwrite(os.path.join(thumb_directory, thumb_name ) , img_h_resize)
 
     return thumb_name

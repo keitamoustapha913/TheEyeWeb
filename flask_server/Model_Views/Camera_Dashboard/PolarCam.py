@@ -16,7 +16,7 @@ import numpy as np  # pip install numpy
 
 from PIL import Image as PIL_Image  # pip install Pillow
 
-#from arena_api.system import system
+from arena_api.system import system
 
 
 
@@ -111,7 +111,7 @@ def capture_polar(device, pixel_format_name = 'PolarizeMono8' ,directory = '.', 
 
         print(f" image_buffer.bits_per_pixel = { image_buffer.bits_per_pixel} " )
         
-        img_id = uuid.uuid1()
+        #img_id = uuid.uuid1()
 
         # To save an image Pillow needs an array that is shaped to
         # (height, width). In order to obtain such an array we use numpy
