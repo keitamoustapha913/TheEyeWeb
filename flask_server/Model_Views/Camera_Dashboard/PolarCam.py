@@ -183,9 +183,9 @@ def capture_polar(device, pixel_format_name = 'PolarizeMono8' ,directory = '.', 
         
         #np.save(npy_name, nparray_reshaped)
 	
-        png_name = f'{directory}/from_{pixel_format_name}_full_{img_id}_to_png_with_pil.png'
+        png_full__name = f'{directory}/from_{pixel_format_name}_full_{img_id}_to_png_with_pil.png'
         png_array = PIL_Image.fromarray(nparray_reshaped)
-        png_array.save(png_name)
+        png_array.save(png_full__name)
         
         """
         print(f'Saved image path is: {Path(os.getcwd()) / png_name}')

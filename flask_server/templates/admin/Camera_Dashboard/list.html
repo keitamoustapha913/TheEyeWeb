@@ -209,12 +209,13 @@
                                             console.log(data.result);
                                             window.location.href = "{{ url_for('camera_dashboard.index_view') }}" ;
                                             /*
+                                            alert("Img Captured: " + "\nStatus: " + status);
                                             $.get("{{ url_for('camera_dashboard.index_view') }}", 
                                                         function(data, status){
-                                                        console.log.log("Image Capture status : " + status) ;
-                                                        alert("Img Captured: " + "\nStatus: " + status);
+                                                        console.log("Image Capture " + "Status: " + status);
+                                                         
+                                                        //alert("Img Captured: " + "\nStatus: " + status);
                                                 });
-
                                             */
                                    
                                 }
