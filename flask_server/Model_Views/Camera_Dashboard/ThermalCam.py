@@ -21,9 +21,9 @@ def create_thermal():
     # Create device Thermal
     cam_therm = cv2.VideoCapture(0, cv2.CAP_V4L2)
     if not cam_therm.isOpened():
-        print('\n\nWARNING: Thermal Cam is not Opened')
+        #print('\n\nWARNING: Thermal Cam is not Opened')
         exit()
-    print(f" \n\t Thermal Devices Created : /dev/Video0 usb-FLIR_Boson_63516-video-index0 ")
+    #print(f" \n\t Thermal Devices Created : /dev/Video0 usb-FLIR_Boson_63516-video-index0 ")
     return cam_therm
 
 
@@ -42,7 +42,7 @@ def capture_therm(cam_therm, directory = '.',img_id = f'{uuid.uuid1()}'):
     
 
         # colormap
-        t1 = time.time()
+        #t1 = time.time()
         frame_therm = cv2.flip(frame_therm, -1)  # rotate 180°
         #frame_therm = cv2.applyColorMap(frame_therm, cv2.COLORMAP_HOT) 
         png_colormap_name = f'{directory}/from_thermal_colormap_Hot_to_png_with_opencv_{img_id}.png'

@@ -131,10 +131,10 @@ class MyCamera_Dashboard(ModelView):
     def after_model_change(self,form, model, is_created):
         
         if is_created:
-            #img_id = uuid.uuid1()
+            img_id = uuid.uuid1()
             #print(f"\n\n model before : {model.id} img_id : {img_id}")
             current_directory = os.path.join( file_path, f"temp")
-            #model.id = img_id
+            model.id = img_id
             model.prev_full_store_path =  os.path.join( current_directory, f"{model.filename}") 
             model.filename = f"{model.filename}"
             thumb_name = admin_form.thumbgen_filename(  f"{model.filename}" )
@@ -176,7 +176,7 @@ class MyCamera_Dashboard(ModelView):
     form_extra_fields = {
         'filename': admin_form.ImageUploadField( label = 'Image Upload Here',
                                       base_path=os.path.join( file_path, f"temp"),
-                                      thumbnail_size=(320, 45, True))
+                                      thumbnail_size=(320, 180, True))
     }
 
     
@@ -289,9 +289,9 @@ class MyCamera_Dashboard(ModelView):
 
     @expose('/camera_capture/', methods=( "GET", "POST",))
     def camera_capture(self):
-        print('\nWARNING:\nTHIS EXAMPLE MIGHT CHANGE THE DEVICE(S) SETTINGS!')
-        print('\nExample started\n')
-
+        print('\nWARNING:\n CAMERA CAPTURE STARTING ...!')
+        
+        t1 = time.time()
         img_id = uuid.uuid1()
         #directory = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'), 'Camera_Capture')
         from_static_imgs_directory = os.path.join( 'Data', 'Images', 'Camera_Capture', f'{img_id}')
@@ -307,7 +307,7 @@ class MyCamera_Dashboard(ModelView):
         
         images_direct_split = [f'{img_id}', f'{img_id}']
 
-        print(f"\n\n Devices used in the example: ")
+        #print(f"\n\n Devices used in the example: ")
         # open Thermal 
         cam_therm = create_thermal()
         
@@ -315,7 +315,7 @@ class MyCamera_Dashboard(ModelView):
         # Create a device Polar
         devices = create_devices_with_tries()
         device = devices[0]
-        print(f"\n\t Polar : {device} ")        
+        #print(f"\n\t Polar : {device} ")        
         
 
         thermal_name = capture_therm(cam_therm, directory = directory , 
@@ -324,7 +324,7 @@ class MyCamera_Dashboard(ModelView):
 
         polar_name = capture_polar(device = device , pixel_format_name = "PolarizedAngles_0d_45d_90d_135d_BayerRG8" ,directory = directory, img_id = img_id )
         #images_names_split.append(polar_name)
-        print('\nExample finished successfully')
+        print(f"\nCapture finished successfully in : {time.time() - t1 } Seconds \n \n") # Capture finished successfully in : 8.00595760345459 Seconds
 
         images_names_split = [thermal_name , polar_name]
         #images_names_split = [thermal_name ]
@@ -333,7 +333,7 @@ class MyCamera_Dashboard(ModelView):
         
         current_full_store_path_directory = from_static_imgs_directory 
         full_thumbnails_store_path =  os.path.join(from_static_thumb_directory, f"{thumb_name}")
-        CameraDashboardModel_db = CameraDashboard( full_thumbnails_store_path = full_thumbnails_store_path, current_full_store_path = current_full_store_path_directory,filename = images_names_string , created_at = datetime.now())
+        CameraDashboardModel_db = CameraDashboard( id = img_id, full_thumbnails_store_path = full_thumbnails_store_path, current_full_store_path = current_full_store_path_directory,filename = images_names_string , created_at = datetime.now())
         db.session.add(CameraDashboardModel_db)
         db.session.commit()
 

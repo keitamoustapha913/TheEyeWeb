@@ -33,16 +33,20 @@ def create_devices_with_tries():
     while tries < tries_max:  # Wait for device for 60 seconds
         devices = system.create_device()
         if not devices:
+            '''
             print(
                 f'Try {tries+1} of {tries_max}: waiting for {sleep_time_secs} '
                 f'secs for a device to be connected!')
+            '''
             for sec_count in range(sleep_time_secs):
                 time.sleep(1)
+                '''
                 print(f'{sec_count + 1 } seconds passed ',
                       '.' * sec_count, end='\r')
+                '''
             tries += 1
         else:
-            print(f'Created {len(devices)} Polar device(s)')
+            #print(f'Created {len(devices)} Polar device(s)')
             return devices
     else:
         raise Exception(f'No device found! Please connect a device and run '
@@ -94,7 +98,7 @@ def capture_polar(device, pixel_format_name = 'PolarizeMono8' ,directory = '.', 
         # Grabbing Polar
         buffer_is_incomplete = True
         while buffer_is_incomplete:
-            print('Grabbing an image buffer')
+            #print('Grabbing an image buffer')
             # Optional args
             image_buffer = device.get_buffer()
             if image_buffer.is_incomplete:
@@ -109,14 +113,14 @@ def capture_polar(device, pixel_format_name = 'PolarizeMono8' ,directory = '.', 
               f'{image_buffer.width} x {image_buffer.height}')
         """
 
-        print(f" image_buffer.bits_per_pixel = { image_buffer.bits_per_pixel} " )
+        #print(f" image_buffer.bits_per_pixel = { image_buffer.bits_per_pixel} " )
         
         #img_id = uuid.uuid1()
 
         # To save an image Pillow needs an array that is shaped to
         # (height, width). In order to obtain such an array we use numpy
         # library
-        print('Converting image buffer to a numpy array')
+        #print('Converting image buffer to a numpy array')
 
         # Buffer.pdata is a (uint8, ctypes.c_ubyte)
         # Buffer.data is a list of elements each represents one byte. Therefore
@@ -146,10 +150,10 @@ def capture_polar(device, pixel_format_name = 'PolarizeMono8' ,directory = '.', 
         else:
             image_only_data = image_buffer.data
 
-        print(f" len image {pixel_format_name} : { len(image_only_data) } ") 
-        print(f"image_only_data[0:9] : {image_only_data[0:9]}")
+        #print(f" len image {pixel_format_name} : { len(image_only_data) } ") 
+        #print(f"image_only_data[0:9] : {image_only_data[0:9]}")
         nparray = np.asarray(image_only_data, dtype=np.uint8)
-        print(f"nparray[0:9] : {nparray[0:9]}")
+        #print(f"nparray[0:9] : {nparray[0:9]}")
         # Reshape array for pillow
 
         if bytes_pre_pixel != 1 :
@@ -176,7 +180,7 @@ def capture_polar(device, pixel_format_name = 'PolarizeMono8' ,directory = '.', 
                                               
         
         # Save image
-        print('Saving image')
+        #print('Saving image')
         
         #npy_name = f'from_{pixel_format_name}_{img_id}_to_png_with_pil.npy'
         #png_name = f'from_{pixel_format_name}_{img_id}_to_png_with_pil.png'

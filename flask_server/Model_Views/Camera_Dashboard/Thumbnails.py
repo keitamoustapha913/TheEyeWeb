@@ -42,7 +42,7 @@ def thumb_gen( imgs_names_list = [] , thumb_directory = '',current_directory = '
         # creating a object  
         image = cv2.imread(os.path.join(current_directory, f'{img_name}' ), cv2.IMREAD_UNCHANGED)
 
-        dim = (320, 45)
+        dim = (320, 180)
         # perform the actual resizing of the image and show it
         resized = cv2.resize(image, dim, interpolation = cv2.INTER_AREA)
         imgs_list.append(resized)
