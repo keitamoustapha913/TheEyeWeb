@@ -57,3 +57,24 @@
 </form>
 {% endmacro %}
 
+
+
+{% macro download_row(action, row_id, row) %}
+<form class="icon" method="POST" action="{{ get_url('.download_row_view') }}">
+  
+  {% if download_row_form.errors %}
+      {{ download_row_form.errors }}
+  {% endif %}
+
+  {{ download_row_form.id(value=get_pk_value(row)) }}
+  {{ download_row_form.url(value=return_url) }}
+  {% if download_row_form.csrf_token %}
+        {{ download_row_form.csrf_token }}
+  {% elif csrf_token %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  {% endif %}
+  <button onclick="return faHelpers.safeConfirm('{{ _gettext('Are you sure you want to download this image set?') }}');" title="{{ _gettext('Download this image') }}">
+        <span class="fa fa-download" aria-hidden="true"></span>
+  </button>
+</form>
+{% endmacro %}

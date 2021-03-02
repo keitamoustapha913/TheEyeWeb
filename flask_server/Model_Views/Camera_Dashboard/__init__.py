@@ -1,4 +1,7 @@
-from flask import redirect,flash,make_response, url_for, request, jsonify, abort,render_template, send_from_directory
+from flask import (redirect,flash,make_response, 
+                   url_for, request, jsonify, 
+                   abort,render_template, 
+                   send_from_directory , send_file)
 
 from flask_admin import BaseView
 from flask.views import MethodView
@@ -19,9 +22,11 @@ from flask_admin import form as admin_form
 
 
 from .PolarCam import create_devices_with_tries, capture_polar
-
 from .ThermalCam import create_thermal, capture_therm
 from .Thumbnails import thumb_gen, copy_images
+from .utils import DirectoryZip
+
+
 from flask_admin.actions import action
 from flask_admin.babel import gettext, ngettext
 from .Cam_model import CameraDashboard
@@ -30,6 +35,13 @@ from datetime import datetime
 
 from flask_server import db
 from flask_server.Model_Views.Camera_Dashboard.Cam_model import CameraDashboard
+
+from flask_admin.model.template import TemplateLinkRowAction
+from flask_admin.helpers import (get_form_data, validate_form_on_submit,
+                                 get_redirect_target, flash_errors)
+
+
+import requests
 
 file_path = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"Camera_Capture" )
 
@@ -41,7 +53,9 @@ class MyCamera_Dashboard(ModelView):
     def action_approve(self, ids):
         try:
             query = CameraDashboard.query.filter(CameraDashboard.id.in_(ids))
-
+            #return_url = get_redirect_target() or self.get_url('.index_view')
+            return_url = get_redirect_target() or self.get_url('admin.login_view')
+            
             count = 0
             for user in query.all():
                               
@@ -56,6 +70,10 @@ class MyCamera_Dashboard(ModelView):
                 raise
 
             flash(gettext('Failed to approve users. %(error)s', error=str(ex)), 'error')
+
+        dictToSend = {'training':'True'}
+        res = requests.post( f"http://localhost:5111"+ self.get_url('.get_gallery'), json=dictToSend)
+
 
 
     file_path = file_path
@@ -128,6 +146,18 @@ class MyCamera_Dashboard(ModelView):
     can_view_details = True
     column_details_list = [ 'preview','avgrating','qpred', 'label','filename' ,'created_at' ]
     
+
+
+    # addding an extra row Action 
+    
+    column_extra_row_actions = [    # Add a new action button
+                    #EndpointLinkRowAction(icon_class = 'fa fa-refresh', endpoint= '.my_action_f', title="Train it", ),
+                    # For downloading the row image
+                    TemplateLinkRowAction("row_actions.download_row", "Download this image set"),
+                ]
+    
+
+
     def after_model_change(self,form, model, is_created):
         
         if is_created:
@@ -183,7 +213,8 @@ class MyCamera_Dashboard(ModelView):
 
     @expose('/')
     def index_view(self):
-
+        # Use the delete row form as a template for the download row form
+        self._template_args['download_row_form'] = self.delete_form()
         #return self.render('admin/Camera_Dashboard/camera_dashboard.html')
         return super(MyCamera_Dashboard, self).index_view()
 
@@ -268,7 +299,7 @@ class MyCamera_Dashboard(ModelView):
             images_direct_split.append(direct_name[0])
             images_names_split.append(direct_name[1])
 
-        print(images_names_split)
+        #print(images_names_split)
         return self.render("admin/Camera_Dashboard/gallery.html", directory=images_direct_split, image_names=images_names_split, zip = zip)
 
     @expose_plugview('/_api/1')
@@ -342,5 +373,47 @@ class MyCamera_Dashboard(ModelView):
         #return self.render("admin/Camera_Dashboard/gallery.html", directory=[f'{img_id}'], image_names=[thumb_name], zip = zip)
         result = {'result':'success'}
         return jsonify(result)
+
+    @expose('/download_image/', methods=('POST',))
+    def download_row_view(self):
+        """
+            download image view. Only POST method is allowed.
+        """
+        return_url = get_redirect_target() or self.get_url('.index_view')
+
+        # Using the default delete form as the train_row form 
+      
+        download_row_form = self.delete_form()
+
+        if self.validate_form(download_row_form):
+            # id is InputRequired()
+            id = download_row_form.id.data
+
+            model = self.get_one(id)
+            
+            if model is None:
+                flash(gettext('Record does not exist.'), 'error')
+                return redirect(return_url)
+
+            # message is flashed from within train_row_model if it fails
+            print(f"\n\n model path")
+            
+            directory = os.path.join(os.environ.get('SYMME_EYE_APPLICATION_DIR'), f"{model.current_full_store_path}")
+            to_zip_dir = os.path.join(os.environ.get('SYMME_EYE_WEB_STATIC_DIR'), "Data/Images/Downloads") 
+            zip_filename = DirectoryZip(dir_name = directory, to_zip_dir = to_zip_dir, id_stamp = f"{model.id}")
+            zip_download_name = os.path.basename(zip_filename) 
+
+            flash(f'Image #{id} was successfully downloaded .','success')
+            #flash(f'model path : {model.current_full_store_path} ','success')
+        else:
+            flash_errors(train_row_form, message='Failed to download record. %(error)s')
+        '''
+        # same as send_from_directory
+        return send_file(f'{zip_filename}',
+            mimetype = 'zip',
+            attachment_filename= f'{zip_download_name}',
+            as_attachment = True) 
+        '''
+        return send_from_directory(to_zip_dir, f'{zip_download_name}', as_attachment = True)
 
 
