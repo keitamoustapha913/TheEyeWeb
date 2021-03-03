@@ -41,6 +41,9 @@ from flask_admin.helpers import (get_form_data, validate_form_on_submit,
                                  get_redirect_target, flash_errors)
 
 
+#from flask_admin.contrib.sqla.filters import  DateBetweenFilter
+
+
 import requests
 
 file_path = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"Camera_Capture" )
@@ -93,6 +96,7 @@ class MyCamera_Dashboard(ModelView):
         'qpred': 'Quality Predicted',
         'label': 'Factory Part Label',
         'filename': 'Storage Filename',
+        'created_at': 'Creation Date',
       
     }
 
@@ -100,7 +104,8 @@ class MyCamera_Dashboard(ModelView):
     column_display_pk = True
     column_list = (  'preview' , 'avgrating', 'qpred', 'label', 'filename', 'created_at', )
     #column_exclude_list = ('full_store_path')
-    
+
+    # Added default sort by created date
     column_default_sort = ('created_at', True)
 
 
@@ -109,7 +114,15 @@ class MyCamera_Dashboard(ModelView):
 
     column_editable_list = (  'avgrating','label',)
 
-    column_filters = ('avgrating', 'qpred')
+    column_filters =['avgrating',
+                     'qpred', 
+                     
+                     #DateBetweenFilter(column=CameraDashboard.created_at, 
+                     #                  name='Date Range',
+                     #                  options=None  ),
+                     
+                     'created_at',
+                     ]
 
     # Forms
     form_columns = ( 'filename', 'label', 'avgrating','qpred',  )
