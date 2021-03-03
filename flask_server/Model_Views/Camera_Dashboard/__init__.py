@@ -100,6 +100,9 @@ class MyCamera_Dashboard(ModelView):
     column_display_pk = True
     column_list = (  'preview' , 'avgrating', 'qpred', 'label', 'filename', 'created_at', )
     #column_exclude_list = ('full_store_path')
+    
+    column_default_sort = ('created_at', True)
+
 
     """Searchable columns """
     column_searchable_list = ( 'label', 'filename' )
@@ -301,22 +304,6 @@ class MyCamera_Dashboard(ModelView):
 
         #print(images_names_split)
         return self.render("admin/Camera_Dashboard/gallery.html", directory=images_direct_split, image_names=images_names_split, zip = zip)
-
-    @expose_plugview('/_api/1')
-    class API_v1(MethodView):
-        def get(self, cls):
-            return cls.render('test.html', request=request, name="API_v1")
-
-        def post(self, cls):
-            return cls.render('test.html', request=request, name="API_v1")
-
-    @expose_plugview('/_api/2')
-    class API_v2(MethodView):
-        def get(self, cls):
-            return cls.render('test.html', request=request, name="API_v2")
-
-        def post(self, cls):
-            return cls.render('test.html', request=request, name="API_v2")
 
     @expose('/camera_capture/', methods=( "GET", "POST",))
     def camera_capture(self):
