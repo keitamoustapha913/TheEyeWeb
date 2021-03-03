@@ -185,60 +185,6 @@ class MyCameraDashboard(ModelView):
 
 
 
-    @action('try', 'Try', 'Are you sure you want to try selected records?')
-    def action_try(self, ids):
-        print(f"\n\n ids : {ids}\n\n")
-        """
-        for i in ids:
-            model_db = self.get_one(id = i)
-            trash_model_db = TrashModel( id = model_db.id, 
-                                        full_thumbnails_store_path = model_db.full_thumbnails_store_path, 
-                                        label = model_db.label,
-                                        avgrating = model_db.avgrating,
-                                        qpred = model_db.qpred,
-                                        prev_full_store_path = model_db.prev_full_store_path,
-                                        current_full_store_path = model_db.current_full_store_path,
-                                        filename = model_db.filename ,
-                                        trashed_at = datetime.now(),  
-                                        created_at = model_db.created_at)
-            self.session.add(trash_model_db)
-            #self.session.flush()
-            try:
-                pass
-                #self.session.commit()
-            except Exception as err:
-                #print(err)
-                #self.session.rollback()
-                self.session.close()
-
-        #query = CameraDashboard.query.filter(CameraDashboard.id.in_(ids))
-        """
-        query = tools.get_query_for_ids(self.get_query(), self.model, ids)
-
-        if self.fast_mass_delete:
-            count = query.delete(synchronize_session=False)
-        else:
-            count = 0
-
-            for m in query.all():
-                print(f"\n\n m.id : {m.id}\n\n")
-                """
-                trash_model_db = TrashModel( id = m.id, 
-                        full_thumbnails_store_path = m.full_thumbnails_store_path, 
-                        label = m.label,
-                        avgrating = m.avgrating,
-                        qpred = m.qpred,
-                        prev_full_store_path = m.prev_full_store_path,
-                        current_full_store_path = m.current_full_store_path,
-                        filename = m.filename ,
-                        trashed_at = datetime.now(),  
-                        created_at = m.created_at)
-                """
-                if self.delete_model(m):
-                    count += 1
-
-        
-
 
     @action('approve', 'Approve', 'Are you sure you want to approve selected users?')
     def action_approve(self, ids):
@@ -303,7 +249,11 @@ class MyCameraDashboard(ModelView):
             thumb_name = admin_form.thumbgen_filename(  f"{model.filename}" )
             thumb_directory = 'Data/Images/thumbnails' 
             model.full_thumbnails_store_path = os.path.join( thumb_directory,thumb_name  ) 
+
             model.created_at = datetime.now()
+            model.current_dashboard = "camera"
+
+
             imgs_names_list = os.listdir(current_directory)
             
             new_directory = os.path.join(file_path , f"{model.id}")
@@ -331,7 +281,10 @@ class MyCameraDashboard(ModelView):
                             current_full_store_path = model.current_full_store_path,
                             filename = model.filename ,
                             trashed_at = datetime.now(),  
-                            created_at = model.created_at)
+                            created_at = model.created_at,
+                            prev_dashboard = model.current_dashboard,
+                            current_dashboard = "trash",
+                            )
         self.session.add(trash_model_db)
         
                 
@@ -404,8 +357,6 @@ class MyCameraDashboard(ModelView):
         if not os.path.exists(target):
             os.makedirs(target)
 
-
-
         images_names_split = []
         images_direct_split = []
         #print(request.files.getlist("file"))
@@ -452,13 +403,14 @@ class MyCameraDashboard(ModelView):
         #directory = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'), 'Camera_Capture')
         from_static_imgs_directory = os.path.join( 'Data', 'Images', 'Camera_Capture', f'{img_id}')
         from_static_thumb_directory = os.path.join( 'Data', 'Images', 'thumbnails')
+
         directory = os.path.join(os.environ.get('SYMME_EYE_APPLICATION_DIR'), from_static_imgs_directory)
         thumb_directory =  os.path.join(os.environ.get('SYMME_EYE_APPLICATION_DIR'), from_static_thumb_directory)  
 
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-        images_direct_split = [f'{img_id}', f'{img_id}']
+        #images_direct_split = [f'{img_id}', f'{img_id}']
 
         #print(f"\n\n Devices used in the example: ")
         # open Thermal 
@@ -471,22 +423,42 @@ class MyCameraDashboard(ModelView):
         #print(f"\n\t Polar : {device} ")        
         
 
-        thermal_name = capture_therm(cam_therm, directory = directory , 
-                                      img_id = img_id)
+        thermal_name = capture_therm(cam_therm = cam_therm, 
+                                      directory = directory , 
+                                      img_id = img_id,
+                                      )
+
         #images_names_split.append(thermal_name)
 
-        polar_name = capture_polar(device = device , pixel_format_name = "PolarizedAngles_0d_45d_90d_135d_BayerRG8" ,directory = directory, img_id = img_id )
+        polar_name = capture_polar(device = device , 
+                                   pixel_format_name = "PolarizedAngles_0d_45d_90d_135d_BayerRG8" ,
+                                   directory = directory, img_id = img_id ,
+                                   )
+
         #images_names_split.append(polar_name)
         print(f"\nCapture finished successfully in : {time.time() - t1 } Seconds \n \n") # Capture finished successfully in : 8.00595760345459 Seconds
 
         images_names_split = [thermal_name , polar_name]
         #images_names_split = [thermal_name ]
         images_names_string = ','.join(images_names_split)
-        thumb_name = thumb_gen( imgs_names_list = images_names_split ,thumb_directory = thumb_directory,current_directory = directory, img_id = img_id)
+
+        thumb_name = thumb_gen( imgs_names_list = images_names_split ,
+                                thumb_directory = thumb_directory,
+                                current_directory = directory, 
+                                img_id = img_id,
+                                 )
         
         current_full_store_path_directory = from_static_imgs_directory 
         full_thumbnails_store_path =  os.path.join(from_static_thumb_directory, f"{thumb_name}")
-        CameraModel_db = CameraModel( id = img_id, full_thumbnails_store_path = full_thumbnails_store_path, current_full_store_path = current_full_store_path_directory,filename = images_names_string , created_at = datetime.now())
+
+        CameraModel_db = CameraModel( id = img_id, 
+                                      full_thumbnails_store_path = full_thumbnails_store_path, 
+                                      current_full_store_path = current_full_store_path_directory,
+                                      filename = images_names_string , 
+                                      created_at = datetime.now() ,
+                                      current_dashboard = "camera",
+                                      )
+
         db.session.add(CameraModel_db)
         db.session.commit()
 

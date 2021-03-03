@@ -18,17 +18,6 @@ class RatingChoices(Enum):
 
 
 class ExpertModel(db.Model):
-    """
-    id = db.Column(db.Integer, primary_key=True)
-    preview = db.Column(db.Unicode(128))
-    label = db.Column(db.Unicode(64))
-    #avgrating = db.Column(db.Integer)
-    avgrating = db.Column(ChoiceType(RatingChoices, impl=db.Integer()), nullable=True)
-    #taken_at = db.Column(db.DateTime())
-    path = db.Column(db.Unicode(128))
-    full_store_path = db.Column(db.Unicode(128))
-    qpred = db.Column(db.Unicode(128))
-    """
 
     id = db.Column(UUIDType(binary=False), default=uuid.uuid1(), primary_key=True)
     preview = db.Column(db.Unicode(128))
@@ -43,11 +32,13 @@ class ExpertModel(db.Model):
     current_full_store_path = db.Column(db.Unicode(128))
     full_thumbnails_store_path = db.Column(db.Unicode(128))
 
-    prev_model = db.Column(db.Unicode(32))
-    current_model = db.Column(db.Unicode(32))
+    prev_dashboard = db.Column(db.Unicode(32))
+    current_dashboard = db.Column(db.Unicode(32))
+
+    machine_part_name = db.Column(db.Unicode(64))
 
     created_at = db.Column(db.DateTime(), default=datetime.now())    
-    
+    restored_at = db.Column(db.DateTime())
     
     
     def __unicode__(self):

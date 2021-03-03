@@ -28,7 +28,8 @@ from flask_admin.contrib.sqla import ModelView
 
 from flask_server import db
 from .trash_model import TrashModel
-
+from ..camera_dashboard.cam_model import CameraModel
+from ..expert_dashboard.exp_model import ExpertModel
 from flask_admin.model.template import TemplateLinkRowAction
 from flask_admin.helpers import (get_form_data, validate_form_on_submit,
                                  get_redirect_target, flash_errors)
@@ -40,7 +41,6 @@ from flask_admin.contrib.sqla import tools
 
 import requests
 
-file_path = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"Camera_Capture" )
 
 
 
@@ -48,7 +48,7 @@ class MyTrashDashboard(ModelView):
 
 
     
-    file_path = file_path
+    file_path = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"Camera_Capture" )
 
     # Table's Columns
     column_descriptions = dict(
@@ -128,6 +128,58 @@ class MyTrashDashboard(ModelView):
     column_formatters = {
         'preview': _preview_thumbnail
     }
+
+    @action('restore',
+            lazy_gettext('Restore'),
+            lazy_gettext('Are you sure you want to restore selected records?'))
+    def action_restore(self, ids):
+        try:            
+            query = tools.get_query_for_ids(self.get_query(), self.model, ids)
+
+            if self.fast_mass_delete:
+                count = query.delete(synchronize_session=False)
+            else:
+                count = 0
+
+                dashboards_dict = {
+                                    'camera': CameraModel ,
+                                    'expert': ExpertModel,
+                                    'trash' : TrashModel, 
+                                  }
+
+                for m in query.all():
+                     
+                    print(f"\n\n m.prev_dashboard : {m.prev_dashboard}\n\n")
+                    
+                    restored_model_db = dashboards_dict[m.prev_dashboard]( id = m.id, 
+                                                full_thumbnails_store_path = m.full_thumbnails_store_path, 
+                                                label = m.label,
+                                                avgrating = m.avgrating,
+                                                qpred = m.qpred,
+                                                prev_full_store_path = m.prev_full_store_path,
+                                                current_full_store_path = m.current_full_store_path,
+                                                filename = m.filename ,  
+                                                prev_dashboard = m.current_dashboard,
+                                                current_dashboard = m.prev_dashboard,
+                                                created_at = m.created_at,
+                                                restored_at = datetime.now(),
+                                                )
+
+                    self.session.add(restored_model_db)                    
+                    if self.delete_model(m):
+                        count += 1
+                self.session.commit()
+
+            flash(ngettext('Record was successfully restored .',
+                           '%(count)s records were successfully restored.',
+                           count,
+                           count=count), 'success')
+        except Exception as ex:
+            if not self.handle_view_exception(ex):
+                raise
+
+            flash(gettext('Failed to restore the records. %(error)s', error=str(ex)), 'error')
+
     
 
     @expose('/')
@@ -209,7 +261,11 @@ class MyTrashDashboard(ModelView):
             images_names_split.append(direct_name[1])
 
         #print(images_names_split)
-        return self.render("admin/Camera_Dashboard/gallery.html", directory=images_direct_split, image_names=images_names_split, zip = zip)
+        return self.render("admin/Camera_Dashboard/gallery.html", 
+                            directory=images_direct_split, 
+                            image_names=images_names_split, 
+                            zip = zip
+                            )
 
     @expose('/download_image/', methods=('POST',))
     def download_row_view(self):
@@ -237,7 +293,12 @@ class MyTrashDashboard(ModelView):
             
             directory = os.path.join(os.environ.get('SYMME_EYE_APPLICATION_DIR'), f"{model.current_full_store_path}")
             to_zip_dir = os.path.join(os.environ.get('SYMME_EYE_WEB_STATIC_DIR'), "Data/Images/Downloads") 
-            zip_filename = DirectoryZip(dir_name = directory, to_zip_dir = to_zip_dir, id_stamp = f"{model.id}")
+            
+            zip_filename = DirectoryZip(dir_name = directory, 
+                                        to_zip_dir = to_zip_dir, 
+                                        id_stamp = f"{model.id}"
+                                        )
+
             zip_download_name = os.path.basename(zip_filename) 
 
             flash(f'Image #{id} was successfully downloaded .','success')

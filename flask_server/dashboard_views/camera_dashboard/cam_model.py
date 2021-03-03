@@ -20,7 +20,7 @@ class RatingChoices(Enum):
 
 
 class CameraModel(db.Model):
-    id = db.Column(UUIDType(binary=False), default=uuid.uuid1, primary_key=True)
+    id = db.Column(UUIDType(binary=False), default=uuid.uuid1(), primary_key=True)
     preview = db.Column(db.Unicode(128))
     label = db.Column(db.Unicode(64))
     
@@ -33,10 +33,13 @@ class CameraModel(db.Model):
     current_full_store_path = db.Column(db.Unicode(128))
     full_thumbnails_store_path = db.Column(db.Unicode(128))
 
-    prev_model = db.Column(db.Unicode(32))
-    current_model = db.Column(db.Unicode(32))
+    prev_dashboard = db.Column(db.Unicode(32))
+    current_dashboard = db.Column(db.Unicode(32))
+
+    machine_part_name = db.Column(db.Unicode(64))
 
     created_at = db.Column(db.DateTime(), default=datetime.now())    
+    restored_at = db.Column(db.DateTime())
     
     def __unicode__(self):
         return self.name
