@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
 from flask_login import current_user
-from flask_server.Home_Index.auth_model import User
+from flask_server.home_index.auth_model import User
 from flask_server import db,bcrypt
 
 

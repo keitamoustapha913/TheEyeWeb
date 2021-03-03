@@ -8,6 +8,8 @@ from flask_admin.contrib.sqla import ModelView
 from flask_admin import helpers as admin_helpers
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
+
+import uuid
 import os
 
 import pandas as pd 
@@ -29,11 +31,10 @@ login_manager.login_message_category = 'info'
 # Instance database
 db = SQLAlchemy()
 
-from flask_server.models import Role, Image
-from flask_server.Home_Index.auth_model import User
-from flask_server.Model_Views.expert_dashboard.exp_model import ExpertModel
-from flask_server.Model_Views.Camera_Dashboard.Cam_model import CameraDashboard
-from flask_server.Model_Views.Trash.trash_model import TrashModel
+from flask_server.home_index.auth_model import User
+from flask_server.dashboard_views.expert_dashboard.exp_model import ExpertModel
+from flask_server.dashboard_views.camera_dashboard.cam_model import CameraModel
+from flask_server.dashboard_views.trash_dashboard.trash_model import TrashModel
 
 # Create Flask application
 app = Flask(__name__)
@@ -59,12 +60,12 @@ def load_user(user_id):
 
 # Admin interface Model Views
 
-from flask_server.Home_Index.views import MyModelView,ImageView
-from flask_server.Model_Views.expert_dashboard import MyExpertDashboard
-from flask_server.Model_Views.Camera_Dashboard import MyCamera_Dashboard
-from flask_server.Model_Views.Trash import MyTrashDashboard
+from flask_server.home_index.views import MyModelView
+from flask_server.dashboard_views.expert_dashboard import MyExpertDashboard
+from flask_server.dashboard_views.camera_dashboard import MyCameraDashboard
+from flask_server.dashboard_views.trash_dashboard import MyTrashDashboard
 
-from flask_server.Home_Index import MyAdminIndexView
+from flask_server.home_index import MyAdminIndexView
 
 admin = Admin(app, name='TheEye', \
                    index_view=MyAdminIndexView(name="Home",url="/") , \
@@ -74,7 +75,7 @@ admin = Admin(app, name='TheEye', \
 admin.add_view(MyModelView(User, db.session))
 
 # Camera_Dashboard
-admin.add_view(MyCamera_Dashboard(model = CameraDashboard, session = db.session ,name='Camera Dashboard', endpoint= 'camera_dashboard'))
+admin.add_view(MyCameraDashboard(model = CameraModel, session = db.session ,name='Camera Dashboard', endpoint= 'camera_dashboard'))
 
 
 # Expert Dashboard 
@@ -85,8 +86,7 @@ admin.add_view(MyTrashDashboard(model = TrashModel, session = db.session , name=
 
 
 
-admin.add_view(MyModelView(model = Role, session = db.session))
-admin.add_view(ImageView(Image, db.session))
+
 
 
 """#Blueprints registrations
@@ -102,8 +102,8 @@ def create_app(config_class=Config):
 
     # random database creation
     with app.app_context():
-        db.create_all()
-        """
+        #db.create_all()
+        
         db.drop_all()
         db.create_all()
 
@@ -111,12 +111,6 @@ def create_app(config_class=Config):
         test_user = User(login="test", email="test@test.com" , password=bcrypt.generate_password_hash("test"))
         db.session.add(test_user)
 
-        images = ["Buffalo", "Elephant", "Leopard", "Lion", "Rhino"]
-        for name in images:
-            image = Image()
-            image.name = name
-            image.path = name.lower() + ".jpg"
-            db.session.add(image)
 
         db.session.commit()
         # /home/devinsider/Documents/Projects/SymmeEye/Application/Eye_App/TheEyeWeb/flask_server/static/Data/csv/Init_firebase_extraction/Init_csv_to_server/init_flask_csv_labeled_82c766d6-72c8-11eb-95b7-00155ddf6e13.csv
@@ -129,11 +123,11 @@ def create_app(config_class=Config):
             qpred = df.at[i,'qpred']
             ImgFolder = df.at[i,'ImgFolder']  
             full_store_path = f"Data/Images/Init_firebase_extraction/Init_Images_Download/{ImgFolder}/{path}"
-            ExpertModel_db = ExpertModel(avgrating = avgrating, path=path, qpred = qpred, full_store_path = full_store_path )
+            ExpertModel_db = ExpertModel(id = uuid.uuid1(), avgrating = avgrating, filename=path, qpred = qpred, current_full_store_path = full_store_path ,  full_thumbnails_store_path = full_store_path )
             db.session.add(ExpertModel_db)
         
         db.session.commit()
-        """
+        
 
 
     return app

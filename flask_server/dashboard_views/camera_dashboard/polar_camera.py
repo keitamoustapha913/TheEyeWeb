@@ -16,7 +16,7 @@ import numpy as np  # pip install numpy
 
 from PIL import Image as PIL_Image  # pip install Pillow
 
-from arena_api.system import system
+#from arena_api.system import system
 
 
 

@@ -20,122 +20,39 @@ from jinja2 import Markup
 from flask_admin import form as admin_form
 
 
-from .PolarCam import create_devices_with_tries, capture_polar
-from .ThermalCam import create_thermal, capture_therm
-from .Thumbnails import thumb_gen, copy_images
-from .utils import DirectoryZip
+from .polar_camera import create_devices_with_tries, capture_polar
+from .thermal_camera import create_thermal, capture_therm
+from .utils import DirectoryZip, thumb_gen, copy_images
 
 
 from flask_admin.actions import action
 from flask_admin.babel import gettext, ngettext, lazy_gettext
 
-from .Cam_model import CameraDashboard
+from .cam_model import CameraModel
 from flask_admin.contrib.sqla import ModelView
 from datetime import datetime
 
 from flask_server import db
-from flask_server.Model_Views.Camera_Dashboard.Cam_model import CameraDashboard
 
 from flask_admin.model.template import TemplateLinkRowAction
 from flask_admin.helpers import (get_form_data, validate_form_on_submit,
                                  get_redirect_target, flash_errors)
 
-from ..Trash.trash_model import TrashModel
+from ..trash_dashboard.trash_model import TrashModel
 #from flask_admin.contrib.sqla.filters import  DateBetweenFilter
 from flask_admin.contrib.sqla import tools
 
 import requests
 
-#from flask_server.Model_Views import MyBaseDashboard
+#from flask_server.dashboard_views import MyBaseDashboard
 
 file_path = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"Camera_Capture" )
 
 
 
-class MyCamera_Dashboard(ModelView):
+class MyCameraDashboard(ModelView):
 
-    @action('delete',
-            lazy_gettext('Delete'),
-            lazy_gettext('Are you sure you want to delete selected records?'))
-    def action_delete(self, ids):
-        try:
-            query = tools.get_query_for_ids(self.get_query(), self.model, ids)
-
-            if self.fast_mass_delete:
-                count = query.delete(synchronize_session=False)
-            else:
-                count = 0
-
-                for m in query.all():
-                    trash_model_db = TrashModel( id = m.id, 
-                            full_thumbnails_store_path = m.full_thumbnails_store_path, 
-                            label = m.label,
-                            avgrating = m.avgrating,
-                            qpred = m.qpred,
-                            prev_full_store_path = m.prev_full_store_path,
-                            current_full_store_path = m.current_full_store_path,
-                            filename = m.filename ,
-                            trashed_at = datetime.now(),  
-                            created_at = m.created_at)
-                    self.session.add(trash_model_db)
-                    if self.delete_model(m):
-                        count += 1
-
-            self.session.commit()
-
-            flash(ngettext('Record was successfully moved to Trash.',
-                           '%(count)s records were successfully trashed.',
-                           count,
-                           count=count), 'success')
-        except Exception as ex:
-            if not self.handle_view_exception(ex):
-                raise
-
-            flash(gettext('Failed to trash the records. %(error)s', error=str(ex)), 'error')
-
-    @action('approve', 'Approve', 'Are you sure you want to approve selected users?')
-    def action_approve(self, ids):
-        try:
-            query = CameraDashboard.query.filter(CameraDashboard.id.in_(ids))
-            #return_url = get_redirect_target() or self.get_url('.index_view')
-            return_url = get_redirect_target() or self.get_url('admin.login_view')
-            
-            count = 0
-            
-            for m in query.all():
-                trash_model_db = TrashModel( id = m.id, 
-                                            full_thumbnails_store_path = m.full_thumbnails_store_path, 
-                                            label = m.label,
-                                            avgrating = m.avgrating,
-                                            qpred = m.qpred,
-                                            prev_full_store_path = m.prev_full_store_path,
-                                            current_full_store_path = m.current_full_store_path,
-                                            filename = m.filename ,
-                                            trashed_at = datetime.now(),  
-                                            created_at = m.created_at)
-                self.session.add(trash_model_db)
-                print(f"\n\n Approved : \
-                       m.id : {m.id} \
-                       m.created_at {m.created_at} \
-                       m.full_thumbnails_store_path {m.full_thumbnails_store_path}\n") 
-
-                count += 1
-            
-            self.session.commit()
-            flash(ngettext('User was successfully approved.',
-                           '%(count)s users were successfully approved.',
-                           count,
-                           count=count))
-        except Exception as ex:
-            if not self.handle_view_exception(ex):
-                raise
-
-            flash(gettext('Failed to approve users. %(error)s', error=str(ex)), 'error')
-
-        dictToSend = {'training':'True'}
-        res = requests.post( f"http://localhost:5111"+ self.get_url('.get_gallery'), json=dictToSend)
-
-
+   
 
     file_path = file_path
 
@@ -160,7 +77,7 @@ class MyCamera_Dashboard(ModelView):
 
     " List of column to show in the table"
     column_display_pk = True
-    column_list = (  'preview' , 'avgrating', 'qpred', 'label', 'filename', 'created_at', )
+    column_list = (  'id','preview' , 'avgrating', 'qpred', 'label', 'filename', 'created_at', )
     #column_exclude_list = ('full_store_path')
 
     # Added default sort by created date
@@ -225,7 +142,153 @@ class MyCamera_Dashboard(ModelView):
                     # For downloading the row image
                     TemplateLinkRowAction("row_actions.download_row", "Download this image set"),
                 ]
-    
+
+    @action('delete',
+            lazy_gettext('Delete'),
+            lazy_gettext('Are you sure you want to delete selected records?'))
+    def action_delete(self, ids):
+        try:            
+            query = tools.get_query_for_ids(self.get_query(), self.model, ids)
+
+            if self.fast_mass_delete:
+                count = query.delete(synchronize_session=False)
+            else:
+                count = 0
+
+                for m in query.all():
+                    print(f"\n\n m.id : {m.id}\n\n")
+                    """
+                    trash_model_db = TrashModel( id = m.id, 
+                            full_thumbnails_store_path = m.full_thumbnails_store_path, 
+                            label = m.label,
+                            avgrating = m.avgrating,
+                            qpred = m.qpred,
+                            prev_full_store_path = m.prev_full_store_path,
+                            current_full_store_path = m.current_full_store_path,
+                            filename = m.filename ,
+                            trashed_at = datetime.now(),  
+                            created_at = m.created_at)
+                    """
+                    if self.delete_model(m):
+                        count += 1
+                self.session.commit()
+
+            flash(ngettext('Record was successfully moved to Trash.',
+                           '%(count)s records were successfully trashed.',
+                           count,
+                           count=count), 'success')
+        except Exception as ex:
+            if not self.handle_view_exception(ex):
+                raise
+
+            flash(gettext('Failed to trash the records. %(error)s', error=str(ex)), 'error')
+
+
+
+    @action('try', 'Try', 'Are you sure you want to try selected records?')
+    def action_try(self, ids):
+        print(f"\n\n ids : {ids}\n\n")
+        """
+        for i in ids:
+            model_db = self.get_one(id = i)
+            trash_model_db = TrashModel( id = model_db.id, 
+                                        full_thumbnails_store_path = model_db.full_thumbnails_store_path, 
+                                        label = model_db.label,
+                                        avgrating = model_db.avgrating,
+                                        qpred = model_db.qpred,
+                                        prev_full_store_path = model_db.prev_full_store_path,
+                                        current_full_store_path = model_db.current_full_store_path,
+                                        filename = model_db.filename ,
+                                        trashed_at = datetime.now(),  
+                                        created_at = model_db.created_at)
+            self.session.add(trash_model_db)
+            #self.session.flush()
+            try:
+                pass
+                #self.session.commit()
+            except Exception as err:
+                #print(err)
+                #self.session.rollback()
+                self.session.close()
+
+        #query = CameraDashboard.query.filter(CameraDashboard.id.in_(ids))
+        """
+        query = tools.get_query_for_ids(self.get_query(), self.model, ids)
+
+        if self.fast_mass_delete:
+            count = query.delete(synchronize_session=False)
+        else:
+            count = 0
+
+            for m in query.all():
+                print(f"\n\n m.id : {m.id}\n\n")
+                """
+                trash_model_db = TrashModel( id = m.id, 
+                        full_thumbnails_store_path = m.full_thumbnails_store_path, 
+                        label = m.label,
+                        avgrating = m.avgrating,
+                        qpred = m.qpred,
+                        prev_full_store_path = m.prev_full_store_path,
+                        current_full_store_path = m.current_full_store_path,
+                        filename = m.filename ,
+                        trashed_at = datetime.now(),  
+                        created_at = m.created_at)
+                """
+                if self.delete_model(m):
+                    count += 1
+
+        
+
+
+    @action('approve', 'Approve', 'Are you sure you want to approve selected users?')
+    def action_approve(self, ids):
+        try:
+            print(f"\n\n ids : {ids}\n\n")
+
+
+
+            query = CameraModel.query.filter(CameraModel.id.in_(ids))
+            #return_url = get_redirect_target() or self.get_url('.index_view')
+            return_url = get_redirect_target() or self.get_url('admin.login_view')
+            
+            count = 0
+            
+            for m in query.all():
+                """
+                trash_model_db = TrashModel( id = m.id, 
+                                            full_thumbnails_store_path = m.full_thumbnails_store_path, 
+                                            label = m.label,
+                                            avgrating = m.avgrating,
+                                            qpred = m.qpred,
+                                            prev_full_store_path = m.prev_full_store_path,
+                                            current_full_store_path = m.current_full_store_path,
+                                            filename = m.filename ,
+                                            trashed_at = datetime.now(),  
+                                            created_at = m.created_at)
+                self.session.add(trash_model_db)
+                """
+                print(f"\n\n Approved : \
+                       m.id : {m.id} \
+                       m.created_at {m.created_at} \
+                       m.full_thumbnails_store_path {m.full_thumbnails_store_path}\n") 
+
+                count += 1
+            
+            self.session.commit()
+            flash(ngettext('User was successfully approved.',
+                           '%(count)s users were successfully approved.',
+                           count,
+                           count=count))
+        except Exception as ex:
+            if not self.handle_view_exception(ex):
+                raise
+
+            flash(gettext('Failed to approve users. %(error)s', error=str(ex)), 'error')
+
+        dictToSend = {'training':'True'}
+        res = requests.post( f"http://localhost:5111"+ self.get_url('.get_gallery'), json=dictToSend)
+
+
 
 
     def after_model_change(self,form, model, is_created):
@@ -240,11 +303,12 @@ class MyCamera_Dashboard(ModelView):
             thumb_name = admin_form.thumbgen_filename(  f"{model.filename}" )
             thumb_directory = 'Data/Images/thumbnails' 
             model.full_thumbnails_store_path = os.path.join( thumb_directory,thumb_name  ) 
-            
+            model.created_at = datetime.now()
             imgs_names_list = os.listdir(current_directory)
+            
+            new_directory = os.path.join(file_path , f"{model.id}")
             model.current_full_store_path = os.path.join( new_directory ,f"{model.filename}"  )
 
-            new_directory = os.path.join(file_path , f"{model.id}")
             if not os.path.exists( new_directory):
                 os.makedirs(new_directory)
 
@@ -269,7 +333,7 @@ class MyCamera_Dashboard(ModelView):
                             trashed_at = datetime.now(),  
                             created_at = model.created_at)
         self.session.add(trash_model_db)
-        self.session.commit()
+        
                 
 
     
@@ -299,7 +363,7 @@ class MyCamera_Dashboard(ModelView):
         # Use the delete row form as a template for the download row form
         self._template_args['download_row_form'] = self.delete_form()
         #return self.render('admin/Camera_Dashboard/camera_dashboard.html')
-        return super(MyCamera_Dashboard, self).index_view()
+        return super(MyCameraDashboard, self).index_view()
 
     
     def is_accessible(self):
@@ -335,22 +399,16 @@ class MyCamera_Dashboard(ModelView):
         img_id = uuid.uuid1()
         
         target = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"Camera_Capture" , f'{img_id}')
-        print(target)
-        try:
-            os.makedirs(target)
-        except OSError as oserror:
-            print(oserror)
+        #print(target)
 
-        """
-        if not os.path.isdir(target):
+        if not os.path.exists(target):
             os.makedirs(target)
-        else:
-            print("Couldn't create upload directory: {}".format(target))
-        """
+
+
 
         images_names_split = []
         images_direct_split = []
-        print(request.files.getlist("file"))
+        #print(request.files.getlist("file"))
         for upload in request.files.getlist("file"):
             #print(upload)
             #print("{} is the file name".format(upload.filename))
@@ -396,13 +454,10 @@ class MyCamera_Dashboard(ModelView):
         from_static_thumb_directory = os.path.join( 'Data', 'Images', 'thumbnails')
         directory = os.path.join(os.environ.get('SYMME_EYE_APPLICATION_DIR'), from_static_imgs_directory)
         thumb_directory =  os.path.join(os.environ.get('SYMME_EYE_APPLICATION_DIR'), from_static_thumb_directory)  
-        try:
-            os.makedirs(directory)
-        except OSError as oserror:
-            print(oserror)
-            
 
-        
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
         images_direct_split = [f'{img_id}', f'{img_id}']
 
         #print(f"\n\n Devices used in the example: ")
@@ -431,8 +486,8 @@ class MyCamera_Dashboard(ModelView):
         
         current_full_store_path_directory = from_static_imgs_directory 
         full_thumbnails_store_path =  os.path.join(from_static_thumb_directory, f"{thumb_name}")
-        CameraDashboardModel_db = CameraDashboard( id = img_id, full_thumbnails_store_path = full_thumbnails_store_path, current_full_store_path = current_full_store_path_directory,filename = images_names_string , created_at = datetime.now())
-        db.session.add(CameraDashboardModel_db)
+        CameraModel_db = CameraModel( id = img_id, full_thumbnails_store_path = full_thumbnails_store_path, current_full_store_path = current_full_store_path_directory,filename = images_names_string , created_at = datetime.now())
+        db.session.add(CameraModel_db)
         db.session.commit()
 
         flash(f"Image #{img_id} was successfully captured")
@@ -471,9 +526,8 @@ class MyCamera_Dashboard(ModelView):
             zip_download_name = os.path.basename(zip_filename) 
 
             flash(f'Image #{id} was successfully downloaded .','success')
-            #flash(f'model path : {model.current_full_store_path} ','success')
         else:
-            flash_errors(train_row_form, message='Failed to download record. %(error)s')
+            flash_errors(download_row_form, message='Failed to download record. %(error)s')
         '''
         # same as send_from_directory
         return send_file(f'{zip_filename}',

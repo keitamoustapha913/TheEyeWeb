@@ -6,8 +6,8 @@ from flask import url_for, redirect, render_template, request, abort, make_respo
 import flask_login as login
 
 from flask_admin import helpers, expose, expose_plugview
-from flask_server.Home_Index.auth_model import User
-from flask_server.Home_Index.auth_forms import LoginForm, RegistrationForm
+from flask_server.home_index.auth_model import User
+from flask_server.home_index.auth_forms import LoginForm, RegistrationForm
 
 
 

@@ -22,11 +22,11 @@ from flask_admin.contrib.sqla import ModelView
 from datetime import datetime
 import time
 
-from .Camera_Dashboard.utils import DirectoryZip
+from .camera_dashboard.utils import DirectoryZip
 
 
 from flask_server import db
-from .Trash.trash_model import TrashModel
+from .trash_dashboard.trash_model import TrashModel
 
 from flask_admin.model.template import TemplateLinkRowAction
 from flask_admin.helpers import (get_form_data, validate_form_on_submit,
@@ -258,50 +258,3 @@ class MyBaseDashboard(ModelView):
             else:
                 # login
                 return redirect(url_for('admin.login_view', next=request.url))
-
-    @expose('/download_image/', methods=('POST',))
-    def download_row_view(self):
-        """
-            download image view. Only POST method is allowed.
-        """
-        return_url = get_redirect_target() or self.get_url('.index_view')
-
-        # Using the default delete form as the train_row form 
-      
-        download_row_form = self.delete_form()
-
-        if self.validate_form(download_row_form):
-            # id is InputRequired()
-            id = download_row_form.id.data
-
-            model = self.get_one(id)
-            
-            if model is None:
-                flash(gettext('Record does not exist.'), 'error')
-                return redirect(return_url)
-
-            # message is flashed from within train_row_model if it fails
-            print(f"\n\n model path")
-            
-            directory = os.path.join(os.environ.get('SYMME_EYE_APPLICATION_DIR'), f"{model.current_full_store_path}")
-            to_zip_dir = os.path.join(os.environ.get('SYMME_EYE_WEB_STATIC_DIR'), "Data/Images/Downloads") 
-            zip_filename = DirectoryZip(dir_name = directory, to_zip_dir = to_zip_dir, id_stamp = f"{model.id}")
-            zip_download_name = os.path.basename(zip_filename) 
-
-            flash(f'Image #{id} was successfully downloaded .','success')
-            #flash(f'model path : {model.current_full_store_path} ','success')
-        else:
-            flash_errors(train_row_form, message='Failed to download record. %(error)s')
-        '''
-        # same as send_from_directory
-        return send_file(f'{zip_filename}',
-            mimetype = 'zip',
-            attachment_filename= f'{zip_download_name}',
-            as_attachment = True) 
-        '''
-        return send_from_directory(to_zip_dir, f'{zip_download_name}', as_attachment = True)
-
-
-
-    
-                

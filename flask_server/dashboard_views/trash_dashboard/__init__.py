@@ -11,8 +11,11 @@ import glob
 
 import os
 import time
+from datetime import datetime
 from pathlib import Path
 import uuid
+
+from ..camera_dashboard.utils import DirectoryZip
 
 from jinja2 import Markup
 from flask_admin import form as admin_form
@@ -21,7 +24,7 @@ from flask_admin import form as admin_form
 from flask_admin.actions import action
 from flask_admin.babel import gettext, ngettext, lazy_gettext
 from flask_admin.contrib.sqla import ModelView
-from datetime import datetime
+
 
 from flask_server import db
 from .trash_model import TrashModel
@@ -44,47 +47,7 @@ file_path = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"Camera_Cap
 class MyTrashDashboard(ModelView):
 
 
-    @action('delete',
-            lazy_gettext('Delete'),
-            lazy_gettext('Are you sure you want to delete selected records?'))
-    def action_delete(self, ids):
-        try:
-            query = tools.get_query_for_ids(self.get_query(), self.model, ids)
-
-            if self.fast_mass_delete:
-                count = query.delete(synchronize_session=False)
-            else:
-                count = 0
-
-                for m in query.all():
-                    trash_model_db = TrashModel( id = m.id, 
-                            full_thumbnails_store_path = m.full_thumbnails_store_path, 
-                            label = m.label,
-                            avgrating = m.avgrating,
-                            qpred = m.qpred,
-                            prev_full_store_path = m.prev_full_store_path,
-                            current_full_store_path = m.current_full_store_path,
-                            filename = m.filename ,
-                            trashed_at = datetime.now(),  
-                            created_at = m.created_at)
-                    self.session.add(trash_model_db)
-                    if self.delete_model(m):
-                        count += 1
-
-            self.session.commit()
-
-            flash(ngettext('Record was successfully deleted.',
-                           '%(count)s records were successfully deleted.',
-                           count,
-                           count=count), 'success')
-        except Exception as ex:
-            if not self.handle_view_exception(ex):
-                raise
-
-            flash(gettext('Failed to delete records. %(error)s', error=str(ex)), 'error')
-
-
-
+    
     file_path = file_path
 
     # Table's Columns
@@ -108,7 +71,7 @@ class MyTrashDashboard(ModelView):
 
     " List of column to show in the table"
     column_display_pk = True
-    column_list = (  'preview' , 'avgrating', 'qpred', 'label', 'filename', 'created_at','trashed_at', )
+    column_list = ( 'id', 'preview' , 'avgrating', 'qpred', 'label', 'filename', 'created_at','trashed_at', )
     #column_exclude_list = ('full_store_path')
 
     # Added default sort by created date
@@ -207,17 +170,9 @@ class MyTrashDashboard(ModelView):
         
         target = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"Camera_Capture" , f'{img_id}')
         print(target)
-        try:
-            os.makedirs(target)
-        except OSError as oserror:
-            print(oserror)
 
-        """
-        if not os.path.isdir(target):
+        if not os.path.exists(target):
             os.makedirs(target)
-        else:
-            print("Couldn't create upload directory: {}".format(target))
-        """
 
         images_names_split = []
         images_direct_split = []
@@ -288,7 +243,7 @@ class MyTrashDashboard(ModelView):
             flash(f'Image #{id} was successfully downloaded .','success')
             #flash(f'model path : {model.current_full_store_path} ','success')
         else:
-            flash_errors(train_row_form, message='Failed to download record. %(error)s')
+            flash_errors(download_row_form, message='Failed to download record. %(error)s')
         '''
         # same as send_from_directory
         return send_file(f'{zip_filename}',

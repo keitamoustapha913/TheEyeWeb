@@ -13,41 +13,29 @@ import os.path as op
 from sqlalchemy.event import listens_for
 from jinja2 import Markup
 
+from datetime import datetime
+
 from flask_admin import form as admin_form
 
 # Actions
-from flask_admin.babel import gettext
-from flask_admin.model import template
-from flask_admin.model.template import EndpointLinkRowAction, LinkRowAction, TemplateLinkRowAction
+from flask_admin.actions import action
+from flask_admin.babel import gettext, ngettext, lazy_gettext
+from flask_admin.model.template import  TemplateLinkRowAction
 
 from flask_admin.helpers import (get_form_data, validate_form_on_submit,
                                  get_redirect_target, flash_errors)
 
 
 from flask_admin.contrib.sqla import tools
-from ..Trash.trash_model import TrashModel
-
-from flask_admin.actions import action
-from flask_admin.babel import gettext, ngettext, lazy_gettext
-
+from ..trash_dashboard.trash_model import TrashModel
+from .exp_model import ExpertModel
+import requests
 
 # Create directory for file fields to use
-file_path = op.join(op.dirname(__file__), 'files')
-file_path = '/home/keitahp/Documents/symme_hp/phase_up/TheEye_flask/TheEye_Web/flask_server/static/history/uploads'
+file_path = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"Camera_Capture" )
+if not os.path.exists(file_path):
+    os.makedirs(file_path)
 #log.debug(f'file_path:{file_path}')
-
-try:
-    os.mkdir(file_path)
-except OSError as e:
-    #log.error("Exception occurred", exc_info=True)
-    #log.exception(f"Exception occurred{e}")
-    pass
-
-class TrainRowAction(TemplateLinkRowAction):
-    def __init__(self):
-        super(TrainRowAction, self).__init__(
-            template_name= 'row_actions.train_row', 
-            title= gettext('Train The Image Record'))
 
 
 # Create customized base view class
@@ -62,7 +50,7 @@ class MyExpertDashboard(ModelView):
         avgrating=' Quality Rating of the expert on the part , To be either "1=OK" or "0=KO"',
         qpred='Quality Prediction of the trained model for the Image either "OK" or "KO" ',
         label='Factory label of the part given by the Expert',
-        path='filename of the part in the storage drive',
+        filename='filename of the part in the storage drive',
 
     )
 
@@ -70,26 +58,26 @@ class MyExpertDashboard(ModelView):
         'avgrating': 'Quality Rating',
         'qpred': 'Quality Predicted',
         'label': 'Factory Part Label',
-        'path': 'Storage Filename',
+        'filename': 'Storage Filename',
       
     }
 
     " List of column to show in the table"
-    column_list = ( 'preview' , 'avgrating', 'qpred', 'label', 'path' )
-    #column_exclude_list = ('full_store_path')
+    column_list = ( 'preview' , 'avgrating', 'qpred', 'label', 'filename' )
+    #column_exclude_list = ('current_full_store_path')
 
     """Searchable columns """
-    column_searchable_list = ( 'label', 'path' )
+    column_searchable_list = ( 'label', 'filename' )
 
     column_editable_list = ( 'avgrating', 'label')
 
     column_filters = ('avgrating', 'qpred')
 
     # Forms
-    form_columns = ( 'path', 'label', 'avgrating','qpred' ,  )
+    form_columns = ( 'filename', 'label', 'avgrating','qpred' ,  )
 
     form_widget_args = {
-        'path': {
+        'filename': {
             'readonly': True
         },
         'qpred': {
@@ -125,6 +113,7 @@ class MyExpertDashboard(ModelView):
                 count = 0
 
                 for m in query.all():
+                    """
                     trash_model_db = TrashModel( id = m.id, 
                             full_thumbnails_store_path = m.full_thumbnails_store_path, 
                             label = m.label,
@@ -136,6 +125,7 @@ class MyExpertDashboard(ModelView):
                             trashed_at = datetime.now(),  
                             created_at = m.created_at)
                     self.session.add(trash_model_db)
+                    """
                     if self.delete_model(m):
                         count += 1
 
@@ -154,13 +144,14 @@ class MyExpertDashboard(ModelView):
     @action('approve', 'Approve', 'Are you sure you want to approve selected users?')
     def action_approve(self, ids):
         try:
-            query = CameraDashboard.query.filter(CameraDashboard.id.in_(ids))
+            query = ExpertModel.query.filter(ExpertModel.id.in_(ids))
             #return_url = get_redirect_target() or self.get_url('.index_view')
             return_url = get_redirect_target() or self.get_url('admin.login_view')
             
             count = 0
             
             for m in query.all():
+                """
                 trash_model_db = TrashModel( id = m.id, 
                                             full_thumbnails_store_path = m.full_thumbnails_store_path, 
                                             label = m.label,
@@ -176,7 +167,7 @@ class MyExpertDashboard(ModelView):
                        m.id : {m.id} \
                        m.created_at {m.created_at} \
                        m.full_thumbnails_store_path {m.full_thumbnails_store_path}\n") 
-
+                """
                 count += 1
             
             self.session.commit()
@@ -219,11 +210,11 @@ class MyExpertDashboard(ModelView):
     
 
     def _preview_thumbnail(view, context, model, name):
-        if not model.full_store_path:
+        if not model.full_thumbnails_store_path:
             return ''
   
         return Markup('<img src="%s" style="width: 25vw;" class="img-thumbnail" >' % url_for('static',
-                                                 filename= model.full_store_path))
+                                                 filename= model.full_thumbnails_store_path))
 
     column_formatters = {
         'preview': _preview_thumbnail
@@ -232,40 +223,17 @@ class MyExpertDashboard(ModelView):
     # Alternative way to contribute field is to override it completely.
     # In this case, Flask-Admin won't attempt to merge various parameters for the field.
     form_extra_fields = {
-        'Uploads': admin_form.ImageUploadField( label = 'Image Upload Here',
+        'filename': admin_form.ImageUploadField( label = 'Image Upload Here',
                                       base_path=file_path,
                                       thumbnail_size=(100, 100, True))
     }
 
     # addding an extra row Action 
-    """
+
     column_extra_row_actions = [
-                    EndpointLinkRowAction(icon_class = 'fa fa-refresh', endpoint= '.my_action_f', title="Train it", )
+                    TemplateLinkRowAction(template_name= 'row_actions.train_row', title= gettext('Train The Image Record'), )
                 ]
-    """
-    def get_list_row_actions(self):
-        """
-            Return list of row action objects, each is instance of
-            :class:`~flask_admin.model.template.BaseListRowAction`
-        """
-        actions = []
-
-        if self.can_view_details:
-            if self.details_modal:
-                actions.append(template.ViewPopupRowAction())
-            else:
-                actions.append(template.ViewRowAction())
-
-        if self.can_edit:
-            if self.edit_modal:
-                actions.append(template.EditPopupRowAction())
-            else:
-                actions.append(template.EditRowAction())
-
-        if self.can_delete:
-            actions.append(template.DeleteRowAction())
-        actions.append(TrainRowAction())
-        return actions + (self.column_extra_row_actions or [])
+    
 
     @expose('/')
     def index_view(self):
