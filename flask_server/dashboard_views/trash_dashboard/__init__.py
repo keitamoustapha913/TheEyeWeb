@@ -16,6 +16,7 @@ from pathlib import Path
 import uuid
 
 from ..camera_dashboard.utils import DirectoryZip
+from .utils import trash_delete
 
 from jinja2 import Markup
 from flask_admin import form as admin_form
@@ -91,7 +92,7 @@ class MyTrashDashboard(ModelView):
    
     can_create = False
     can_edit = False
-    can_delete = True
+    can_delete = False
     
     # Modals
     details_modal = True
@@ -180,7 +181,45 @@ class MyTrashDashboard(ModelView):
 
             flash(gettext('Failed to restore the records. %(error)s', error=str(ex)), 'error')
 
+    @action('remove',
+            lazy_gettext('Delete'),
+            lazy_gettext('Are you sure you want to delete selected records?'))
+    def action_remove(self, ids):
+        try:
+            query = tools.get_query_for_ids(self.get_query(), self.model, ids)
+
+            if self.fast_mass_delete:
+                count = query.delete(synchronize_session=False)
+            else:
+                count = 0
+
+                for m in query.all():
+                    imgs_main_dir = m.current_full_store_path
+                    img_thumb_path =os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR'),m.full_thumbnails_store_path) 
+                    trash_delete(imgs_main_dir = imgs_main_dir, img_thumb_path = img_thumb_path )
+
+                    if self.delete_model(m):
+                        count += 1
+
+            self.session.commit()
+
+            flash(ngettext('Record was successfully deleted.',
+                           '%(count)s records were successfully deleted.',
+                           count,
+                           count=count), 'success')
+        except Exception as ex:
+            if not self.handle_view_exception(ex):
+                raise
+
+            flash(gettext('Failed to delete records. %(error)s', error=str(ex)), 'error')
     
+
+    def on_model_delete(self, model):
+        #imgs_main_dir = model.current_full_store_path
+        #img_thumb_path =os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR'),model.full_thumbnails_store_path) 
+        #trash_delete(imgs_main_dir = imgs_main_dir, img_thumb_path = img_thumb_path )
+        pass
+
 
     @expose('/')
     def index_view(self):
