@@ -23,6 +23,14 @@ from flask_admin.model.template import EndpointLinkRowAction, LinkRowAction, Tem
 from flask_admin.helpers import (get_form_data, validate_form_on_submit,
                                  get_redirect_target, flash_errors)
 
+
+from flask_admin.contrib.sqla import tools
+from ..Trash.trash_model import TrashModel
+
+from flask_admin.actions import action
+from flask_admin.babel import gettext, ngettext, lazy_gettext
+
+
 # Create directory for file fields to use
 file_path = op.join(op.dirname(__file__), 'files')
 file_path = '/home/keitahp/Documents/symme_hp/phase_up/TheEye_flask/TheEye_Web/flask_server/static/history/uploads'
@@ -103,6 +111,88 @@ class MyExpertDashboard(ModelView):
 
     # Pagination 
     can_set_page_size  = True # Edit number of items which can be ( 20 / 50 / 100 ) per page 
+
+    @action('delete',
+            lazy_gettext('Delete'),
+            lazy_gettext('Are you sure you want to delete selected records?'))
+    def action_delete(self, ids):
+        try:
+            query = tools.get_query_for_ids(self.get_query(), self.model, ids)
+
+            if self.fast_mass_delete:
+                count = query.delete(synchronize_session=False)
+            else:
+                count = 0
+
+                for m in query.all():
+                    trash_model_db = TrashModel( id = m.id, 
+                            full_thumbnails_store_path = m.full_thumbnails_store_path, 
+                            label = m.label,
+                            avgrating = m.avgrating,
+                            qpred = m.qpred,
+                            prev_full_store_path = m.prev_full_store_path,
+                            current_full_store_path = m.current_full_store_path,
+                            filename = m.filename ,
+                            trashed_at = datetime.now(),  
+                            created_at = m.created_at)
+                    self.session.add(trash_model_db)
+                    if self.delete_model(m):
+                        count += 1
+
+            self.session.commit()
+
+            flash(ngettext('Record was successfully moved to Trash.',
+                           '%(count)s records were successfully trashed.',
+                           count,
+                           count=count), 'success')
+        except Exception as ex:
+            if not self.handle_view_exception(ex):
+                raise
+
+            flash(gettext('Failed to trash the records. %(error)s', error=str(ex)), 'error')
+
+    @action('approve', 'Approve', 'Are you sure you want to approve selected users?')
+    def action_approve(self, ids):
+        try:
+            query = CameraDashboard.query.filter(CameraDashboard.id.in_(ids))
+            #return_url = get_redirect_target() or self.get_url('.index_view')
+            return_url = get_redirect_target() or self.get_url('admin.login_view')
+            
+            count = 0
+            
+            for m in query.all():
+                trash_model_db = TrashModel( id = m.id, 
+                                            full_thumbnails_store_path = m.full_thumbnails_store_path, 
+                                            label = m.label,
+                                            avgrating = m.avgrating,
+                                            qpred = m.qpred,
+                                            prev_full_store_path = m.prev_full_store_path,
+                                            current_full_store_path = m.current_full_store_path,
+                                            filename = m.filename ,
+                                            trashed_at = datetime.now(),  
+                                            created_at = m.created_at)
+                self.session.add(trash_model_db)
+                print(f"\n\n Approved : \
+                       m.id : {m.id} \
+                       m.created_at {m.created_at} \
+                       m.full_thumbnails_store_path {m.full_thumbnails_store_path}\n") 
+
+                count += 1
+            
+            self.session.commit()
+            flash(ngettext('User was successfully approved.',
+                           '%(count)s users were successfully approved.',
+                           count,
+                           count=count))
+        except Exception as ex:
+            if not self.handle_view_exception(ex):
+                raise
+
+            flash(gettext('Failed to approve users. %(error)s', error=str(ex)), 'error')
+
+        dictToSend = {'training':'True'}
+        res = requests.post( f"http://localhost:5111"+ self.get_url('.get_gallery'), json=dictToSend)
+
     
     
 

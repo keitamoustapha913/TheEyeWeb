@@ -33,6 +33,7 @@ from flask_server.models import Role, Image
 from flask_server.Home_Index.auth_model import User
 from flask_server.Model_Views.expert_dashboard.exp_model import ExpertModel
 from flask_server.Model_Views.Camera_Dashboard.Cam_model import CameraDashboard
+from flask_server.Model_Views.Trash.trash_model import TrashModel
 
 # Create Flask application
 app = Flask(__name__)
@@ -61,6 +62,7 @@ def load_user(user_id):
 from flask_server.Home_Index.views import MyModelView,ImageView
 from flask_server.Model_Views.expert_dashboard import MyExpertDashboard
 from flask_server.Model_Views.Camera_Dashboard import MyCamera_Dashboard
+from flask_server.Model_Views.Trash import MyTrashDashboard
 
 from flask_server.Home_Index import MyAdminIndexView
 
@@ -72,11 +74,15 @@ admin = Admin(app, name='TheEye', \
 admin.add_view(MyModelView(User, db.session))
 
 # Camera_Dashboard
-admin.add_view(MyCamera_Dashboard(model = CameraDashboard, session = db.session , endpoint= 'camera_dashboard'))
+admin.add_view(MyCamera_Dashboard(model = CameraDashboard, session = db.session ,name='Camera Dashboard', endpoint= 'camera_dashboard'))
 
 
 # Expert Dashboard 
-admin.add_view(MyExpertDashboard( model = ExpertModel, session = db.session , endpoint= 'expertmodel') )
+admin.add_view(MyExpertDashboard( model = ExpertModel, session = db.session , name='Expert Dashboard', endpoint= 'expert_dashboard') )
+
+# Trash Dashboard
+admin.add_view(MyTrashDashboard(model = TrashModel, session = db.session , name='Trash Dashboard',  endpoint= 'trash_dashboard'))
+
 
 
 admin.add_view(MyModelView(model = Role, session = db.session))

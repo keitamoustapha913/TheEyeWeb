@@ -3,46 +3,37 @@ from flask import (redirect,flash,make_response,
                    abort,render_template, 
                    send_from_directory , send_file)
 
-from flask_admin import BaseView
 from flask.views import MethodView
 from flask_admin import helpers, expose, expose_plugview
 from flask_login import current_user
-import os
+
 import glob
 
+import os
 import time
 from pathlib import Path
 import uuid
-import cv2  # pip install opencv-python
-import numpy as np  # pip install numpy
 
 from jinja2 import Markup
 from flask_admin import form as admin_form
 
 
-from .PolarCam import create_devices_with_tries, capture_polar
-from .ThermalCam import create_thermal, capture_therm
-from .Thumbnails import thumb_gen, copy_images
-from .utils import DirectoryZip
-
-
 from flask_admin.actions import action
 from flask_admin.babel import gettext, ngettext, lazy_gettext
-
-from .Cam_model import CameraDashboard
 from flask_admin.contrib.sqla import ModelView
 from datetime import datetime
 
 from flask_server import db
-from flask_server.Model_Views.Camera_Dashboard.Cam_model import CameraDashboard
+from .trash_model import TrashModel
 
 from flask_admin.model.template import TemplateLinkRowAction
 from flask_admin.helpers import (get_form_data, validate_form_on_submit,
                                  get_redirect_target, flash_errors)
 
-from ..Trash.trash_model import TrashModel
-#from flask_admin.contrib.sqla.filters import  DateBetweenFilter
 from flask_admin.contrib.sqla import tools
+
+#from flask_admin.contrib.sqla.filters import  DateBetweenFilter
+
 
 import requests
 
@@ -50,7 +41,8 @@ file_path = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"Camera_Cap
 
 
 
-class MyCamera_Dashboard(ModelView):
+class MyTrashDashboard(ModelView):
+
 
     @action('delete',
             lazy_gettext('Delete'),
@@ -81,57 +73,15 @@ class MyCamera_Dashboard(ModelView):
 
             self.session.commit()
 
-            flash(ngettext('Record was successfully moved to Trash.',
-                           '%(count)s records were successfully trashed.',
+            flash(ngettext('Record was successfully deleted.',
+                           '%(count)s records were successfully deleted.',
                            count,
                            count=count), 'success')
         except Exception as ex:
             if not self.handle_view_exception(ex):
                 raise
 
-            flash(gettext('Failed to trash the records. %(error)s', error=str(ex)), 'error')
-
-    @action('approve', 'Approve', 'Are you sure you want to approve selected users?')
-    def action_approve(self, ids):
-        try:
-            query = CameraDashboard.query.filter(CameraDashboard.id.in_(ids))
-            #return_url = get_redirect_target() or self.get_url('.index_view')
-            return_url = get_redirect_target() or self.get_url('admin.login_view')
-            
-            count = 0
-            
-            for m in query.all():
-                trash_model_db = TrashModel( id = m.id, 
-                                            full_thumbnails_store_path = m.full_thumbnails_store_path, 
-                                            label = m.label,
-                                            avgrating = m.avgrating,
-                                            qpred = m.qpred,
-                                            prev_full_store_path = m.prev_full_store_path,
-                                            current_full_store_path = m.current_full_store_path,
-                                            filename = m.filename ,
-                                            trashed_at = datetime.now(),  
-                                            created_at = m.created_at)
-                self.session.add(trash_model_db)
-                print(f"\n\n Approved : \
-                       m.id : {m.id} \
-                       m.created_at {m.created_at} \
-                       m.full_thumbnails_store_path {m.full_thumbnails_store_path}\n") 
-
-                count += 1
-            
-            self.session.commit()
-            flash(ngettext('User was successfully approved.',
-                           '%(count)s users were successfully approved.',
-                           count,
-                           count=count))
-        except Exception as ex:
-            if not self.handle_view_exception(ex):
-                raise
-
-            flash(gettext('Failed to approve users. %(error)s', error=str(ex)), 'error')
-
-        dictToSend = {'training':'True'}
-        res = requests.post( f"http://localhost:5111"+ self.get_url('.get_gallery'), json=dictToSend)
+            flash(gettext('Failed to delete records. %(error)s', error=str(ex)), 'error')
 
 
 
@@ -153,57 +103,34 @@ class MyCamera_Dashboard(ModelView):
         'label': 'Factory Part Label',
         'filename': 'Storage Filename',
         'created_at': 'Creation Date',
-      
+        'trashed_at': 'Trashed Date'
     }
 
     " List of column to show in the table"
     column_display_pk = True
-    column_list = (  'preview' , 'avgrating', 'qpred', 'label', 'filename', 'created_at', )
+    column_list = (  'preview' , 'avgrating', 'qpred', 'label', 'filename', 'created_at','trashed_at', )
     #column_exclude_list = ('full_store_path')
 
     # Added default sort by created date
-    column_default_sort = ('created_at', True)
+    column_default_sort = ('trashed_at', True)
 
-
+    
     """Searchable columns """
     column_searchable_list = ( 'label', 'filename' )
 
-    column_editable_list = (  'avgrating','label',)
-
     column_filters =['avgrating',
                      'qpred', 
+                     
                      'created_at',
+                     'trashed_at',
                      ]
 
-    # Forms
-    form_columns = ( 'filename', 'label', 'avgrating','qpred',  )
-
-    form_widget_args = {
-        'filename': {
-            'readonly': True,
-        },
-        'qpred': {
-            'readonly': True
-        },
-        
-    }
+   
+    can_create = False
+    can_edit = False
+    can_delete = True
     
-    # Export to csv
-    can_export = True
-    export_types = ['csv']
-    column_export_list = ['id', 'filename', 'label','avgrating','qpred','current_full_store_path' , 'full_thumbnails_store_path' ]
-    export_max_rows = 10000
-    # Index view html template
-    # templates/
-    list_template = 'admin/Camera_Dashboard/list.html'
-
     # Modals
-    edit_modal = True
-    """Setting this to true will display the edit_view as a modal dialog."""
-
-    create_modal = True
-    """Setting this to true will display the create_view as a modal dialog."""
-
     details_modal = True
     """Setting this to true will display the details_view as a modal dialog."""
 
@@ -212,62 +139,19 @@ class MyCamera_Dashboard(ModelView):
 
     # To view preview image
     can_view_details = True
-    column_details_list = [ 'preview','avgrating','qpred', 'label','filename' ,'created_at' ]
+    column_details_list = [ 'preview','avgrating','qpred', 'label','filename' ,'created_at','trashed_at' ]
     
-
+    # 
 
     # addding an extra row Action 
-    
+    """
     column_extra_row_actions = [    # Add a new action button
                     #EndpointLinkRowAction(icon_class = 'fa fa-refresh', endpoint= '.my_action_f', title="Train it", ),
                     # For downloading the row image
                     TemplateLinkRowAction("row_actions.download_row", "Download this image set"),
                 ]
-    
+    """
 
-
-    def after_model_change(self,form, model, is_created):
-        
-        if is_created:
-            img_id = uuid.uuid1()
-            #print(f"\n\n model before : {model.id} img_id : {img_id}")
-            current_directory = os.path.join( file_path, f"temp")
-            model.id = img_id
-            model.prev_full_store_path =  os.path.join( current_directory, f"{model.filename}") 
-
-            thumb_name = admin_form.thumbgen_filename(  f"{model.filename}" )
-            thumb_directory = 'Data/Images/thumbnails' 
-            model.full_thumbnails_store_path = os.path.join( thumb_directory,thumb_name  ) 
-            
-            imgs_names_list = os.listdir(current_directory)
-            model.current_full_store_path = os.path.join( new_directory ,f"{model.filename}"  )
-
-            new_directory = os.path.join(file_path , f"{model.id}")
-            if not os.path.exists( new_directory):
-                os.makedirs(new_directory)
-
-            copy_images(imgs_names_list = imgs_names_list , current_directory = current_directory, 
-                        new_directory = new_directory, thumb_name = thumb_name,thumb_directory=thumb_directory)
-
-            try:
-                self.session.commit()
-            except Exception as ex:
-                self.session.rollback()
-
-    
-    def on_model_delete(self, model):
-        trash_model_db = TrashModel( id = model.id, 
-                            full_thumbnails_store_path = model.full_thumbnails_store_path, 
-                            label = model.label,
-                            avgrating = model.avgrating,
-                            qpred = model.qpred,
-                            prev_full_store_path = model.prev_full_store_path,
-                            current_full_store_path = model.current_full_store_path,
-                            filename = model.filename ,
-                            trashed_at = datetime.now(),  
-                            created_at = model.created_at)
-        self.session.add(trash_model_db)
-        self.session.commit()
                 
 
     
@@ -281,23 +165,12 @@ class MyCamera_Dashboard(ModelView):
     column_formatters = {
         'preview': _preview_thumbnail
     }
-
-    # Alternative way to contribute field is to override it completely.
-    # In this case, Flask-Admin won't attempt to merge various parameters for the field.
-    form_extra_fields = {
-        'filename': admin_form.ImageUploadField( label = 'Image Upload Here',
-                                      base_path=os.path.join( file_path, f"temp"),
-                                      thumbnail_size=(320, 180, True))
-    }
-
     
 
     @expose('/')
     def index_view(self):
-        # Use the delete row form as a template for the download row form
-        self._template_args['download_row_form'] = self.delete_form()
-        #return self.render('admin/Camera_Dashboard/camera_dashboard.html')
-        return super(MyCamera_Dashboard, self).index_view()
+   
+        return super(MyTrashDashboard, self).index_view()
 
     
     def is_accessible(self):
@@ -382,62 +255,6 @@ class MyCamera_Dashboard(ModelView):
 
         #print(images_names_split)
         return self.render("admin/Camera_Dashboard/gallery.html", directory=images_direct_split, image_names=images_names_split, zip = zip)
-
-    @expose('/camera_capture/', methods=( "GET", "POST",))
-    def camera_capture(self):
-        print('\nWARNING:\n CAMERA CAPTURE STARTING ...!')
-        
-        t1 = time.time()
-        img_id = uuid.uuid1()
-        #directory = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'), 'Camera_Capture')
-        from_static_imgs_directory = os.path.join( 'Data', 'Images', 'Camera_Capture', f'{img_id}')
-        from_static_thumb_directory = os.path.join( 'Data', 'Images', 'thumbnails')
-        directory = os.path.join(os.environ.get('SYMME_EYE_APPLICATION_DIR'), from_static_imgs_directory)
-        thumb_directory =  os.path.join(os.environ.get('SYMME_EYE_APPLICATION_DIR'), from_static_thumb_directory)  
-        try:
-            os.makedirs(directory)
-        except OSError as oserror:
-            print(oserror)
-            
-
-        
-        images_direct_split = [f'{img_id}', f'{img_id}']
-
-        #print(f"\n\n Devices used in the example: ")
-        # open Thermal 
-        cam_therm = create_thermal()
-        
-        
-        # Create a device Polar
-        devices = create_devices_with_tries()
-        device = devices[0]
-        #print(f"\n\t Polar : {device} ")        
-        
-
-        thermal_name = capture_therm(cam_therm, directory = directory , 
-                                      img_id = img_id)
-        #images_names_split.append(thermal_name)
-
-        polar_name = capture_polar(device = device , pixel_format_name = "PolarizedAngles_0d_45d_90d_135d_BayerRG8" ,directory = directory, img_id = img_id )
-        #images_names_split.append(polar_name)
-        print(f"\nCapture finished successfully in : {time.time() - t1 } Seconds \n \n") # Capture finished successfully in : 8.00595760345459 Seconds
-
-        images_names_split = [thermal_name , polar_name]
-        #images_names_split = [thermal_name ]
-        images_names_string = ','.join(images_names_split)
-        thumb_name = thumb_gen( imgs_names_list = images_names_split ,thumb_directory = thumb_directory,current_directory = directory, img_id = img_id)
-        
-        current_full_store_path_directory = from_static_imgs_directory 
-        full_thumbnails_store_path =  os.path.join(from_static_thumb_directory, f"{thumb_name}")
-        CameraDashboardModel_db = CameraDashboard( id = img_id, full_thumbnails_store_path = full_thumbnails_store_path, current_full_store_path = current_full_store_path_directory,filename = images_names_string , created_at = datetime.now())
-        db.session.add(CameraDashboardModel_db)
-        db.session.commit()
-
-        flash(f"Image #{img_id} was successfully captured")
-        #return self.render("admin/Camera_Dashboard/complete.html")
-        #return self.render("admin/Camera_Dashboard/gallery.html", directory=[f'{img_id}'], image_names=[thumb_name], zip = zip)
-        result = {'result':'success'}
-        return jsonify(result)
 
     @expose('/download_image/', methods=('POST',))
     def download_row_view(self):
