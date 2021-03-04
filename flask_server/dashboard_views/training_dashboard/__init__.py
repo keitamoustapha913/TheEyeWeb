@@ -17,6 +17,8 @@ import uuid
 
 from ..camera_dashboard.utils import DirectoryZip
 from ..trash_dashboard.utils import trash_delete
+from .utils import ( dataset_maker, parse_images_dirs,
+                     labeled_dirs_maker_from_csv, copy_images_to_label_from_csv  )
 
 from jinja2 import Markup
 from flask_admin import form as admin_form
@@ -42,23 +44,23 @@ from flask_admin.contrib.sqla import tools
 
 #from flask_admin.contrib.sqla.filters import  DateBetweenFilter
 
-
-import requests
+from .compile_fit_train import compile_fit
 
 
 
 
 class MyTrainingDashboard(ModelView):
     
+    # Main Directory Creation for training
     ml_model_path = os.path.join(os.environ.get('SYMME_EYE_DATA_DIR'),"ml_models" )
     if not os.path.exists(ml_model_path):
         os.makedirs(ml_model_path)
 
-    ml_training_path = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"deep_learning" , "training_images"  )
+    ml_training_path = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"deep_learning_images" , "training_images"  )
     if not os.path.exists(ml_training_path):
         os.makedirs(ml_training_path)
 
-    ml_testing_path = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'), "deep_learning", "testing_images"  )
+    ml_testing_path = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'), "deep_learning_images", "testing_images"  )
     if not os.path.exists(ml_testing_path):
         os.makedirs(ml_testing_path)
 
@@ -78,7 +80,7 @@ class MyTrainingDashboard(ModelView):
         'label': 'Factory Part Label',
         'filename': 'Storage Filename',
         'created_at': 'Creation Date',
-        'trained_at': 'Sent to training Date'
+        'to_train_at': 'Sent to training Date'
     }
 
     " List of column to show in the table"
@@ -157,9 +159,6 @@ class MyTrainingDashboard(ModelView):
                 count = 0
 
                 for m in query.all():
-                    imgs_main_dir = m.current_full_store_path
-                    img_thumb_path = os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR'),m.full_thumbnails_store_path) 
-                    trash_delete(imgs_main_dir = imgs_main_dir, img_thumb_path = img_thumb_path )
 
                     if self.delete_model(m):
                         count += 1
@@ -212,6 +211,8 @@ class MyTrainingDashboard(ModelView):
                 # login
                 return redirect(url_for('admin.login_view', next=request.url))
 
+
+
     @expose('/start_training/', methods=("POST",))
     def start_training(self):
         print('\n TRAINING STARTING ...!\n\n')
@@ -220,19 +221,19 @@ class MyTrainingDashboard(ModelView):
         img_id = uuid.uuid1()
 
         models = self.session.query(TrainModel).all()
-        models_list = []
-        for m in models:
-            print(f"\n\n m.id : {m.id} m.current_full_store_path : {m.current_full_store_path}")
-            models_list.append(m)
-        
-        print(f"\n\n Number of models {len(models_list)}")
 
+        dataset_csv_path_list = dataset_maker(models = models, 
+                                              to_csv_path = self.ml_training_path , 
+                                              is_training = True)
 
+        labeled_dirs_maker_from_csv(dirs_path_list = dataset_csv_path_list)
 
-        flash(f" training #{img_id} was successfully started")
-        #return self.render("admin/Camera_Dashboard/complete.html")
-        #return self.render("admin/Camera_Dashboard/gallery.html", directory=[f'{img_id}'], image_names=[thumb_name], zip = zip)
-        result = {'result':'success'}
-        return jsonify(result)
+        copy_images_to_label_from_csv(dataset_csv_path_list = dataset_csv_path_list)
+
+        compile_fit( data_dir = self.ml_training_path, batch_size = 2 , img_height = 180 , img_width = 180)
+
+        flash(f" training #{img_id} was successfully started", category='success')
+
+        return jsonify({'result':'success'})
     
 
