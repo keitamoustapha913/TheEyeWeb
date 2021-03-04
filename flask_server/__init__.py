@@ -1,4 +1,4 @@
-from flask import Flask,url_for
+from flask import Flask,url_for, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_server.config import Config
 import string
@@ -69,13 +69,22 @@ from flask_server.home_index import MyAdminIndexView
 
 admin = Admin(app, name='TheEye', \
                    index_view=MyAdminIndexView(name="Home",url="/") , \
-                   base_template='admin/custom/custom_base_ext.html', template_mode='bootstrap3')
+                   base_template='admin/custom/custom_base_ext.html', 
+                   template_mode='bootstrap3', 
+
+                   )
 
 
 admin.add_view(MyModelView(User, db.session))
 
 # Camera_Dashboard
-admin.add_view(MyCameraDashboard(model = CameraModel, session = db.session ,name='Camera Dashboard', endpoint= 'camera_dashboard'))
+admin.add_view(MyCameraDashboard(model = CameraModel,
+                                 session = db.session ,
+                                 name='Camera Dashboard', 
+                                 endpoint= 'camera_dashboard', 
+
+                                 ) 
+                                )
 
 
 # Expert Dashboard 
@@ -85,10 +94,14 @@ admin.add_view(MyExpertDashboard( model = ExpertModel, session = db.session , na
 admin.add_view(MyTrashDashboard(model = TrashModel, session = db.session , name='Trash Dashboard',  endpoint= 'trash_dashboard'))
 
 
-
-
-
-
+"""
+# Favicon 
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+                               'favicon/favicon.ico', mimetype='image/vnd.microsoft.icon')
+#
+"""
 """#Blueprints registrations
 from flask_server.Home_blueprint.routes import Home_bp
 app.register_blueprint(Home_bp)
@@ -102,6 +115,7 @@ def create_app(config_class=Config):
 
     # random database creation
     with app.app_context():
+
         #db.create_all()
         
         db.drop_all()

@@ -8,8 +8,14 @@
         <meta charset="UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="description" content="">
-        <meta name="author" content="">
+        <meta name="description" content="The Eye Deep Quality Control system">
+        <meta name="author" content="Mouhamed Moustapha KEITA">
+        <link rel="shortcut icon" href="{{ url_for( 'static' ,filename='favicon/favicon.ico') }}">
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for( 'static' ,filename='favicon/apple-touch-icon.png') }} ">
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for( 'static' ,filename='favicon-32x32.png') }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for( 'static' ,filename='favicon/favicon-16x16.png') }}">
+        <link rel="manifest" href="{{ url_for( 'static' ,filename='favicon/site.webmanifest') }}">
+
     {% endblock %}
     {% block head_css %}
         <link href="{{ admin_static.url(filename='bootstrap/bootstrap4/swatch/{swatch}/bootstrap.min.css'.format(swatch=config.get('FLASK_ADMIN_SWATCH', 'default')), v='4.2.1') }}"
@@ -48,7 +54,7 @@
             <!-- navbar content -->
             <div class="collapse navbar-collapse" id="admin-navbar-collapse">
             {% block brand %}
-                <a class="navbar-brand" href="{{ admin_view.admin.url }}">{{ admin_view.admin.name }}</a>
+                <a class="navbar-brand" href="{{ admin_view.admin.url }}"><img src="{{ url_for( 'static' ,filename='icons/eye_brand.png' ) }}" style="width: 32px;height: 32px"> {{ admin_view.admin.name }}</a>
             {% endblock %}
             {% block main_menu %}
                 <ul class="navbar-nav mr-auto">
@@ -107,6 +113,19 @@
     {% endblock my_js %}
 
     {% block tail %}
+            <!--
+            <div class=footer>
+                <small>
+                <ul class="company">
+                    <li>© Mouhamed Moustapha KEITA</li>
+                </ul>
+                    <ul class="footer-nav">
+                    <li><a routerLink="/home">About</a></li>
+                    <li><a href="mailto:mouhamed-moustapha.keita@univ-smb.fr">Contact</a></li>
+                    </ul>
+                </small>
+            </div>
+            --->
     {% endblock %}
   </body>
 </html>
