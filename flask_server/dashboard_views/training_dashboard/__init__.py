@@ -220,12 +220,7 @@ class MyTrainingDashboard(ModelView):
         img_id = uuid.uuid1()
 
         models = self.session.query(TrainModel).all()
-        models_list = []
-        for m in models:
-            print(f"\n\n m.id : {m.id} m.current_full_store_path : {m.current_full_store_path}")
-            models_list.append(m)
-        
-        print(f"\n\n Number of models {len(models_list)}")
+
 
 
 
