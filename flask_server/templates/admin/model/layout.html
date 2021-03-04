@@ -86,9 +86,11 @@
               <input class="form-control {{ input_class }}" size="30" type="text" name="search" value=""
                        placeholder="{{ _gettext('%(placeholder)s', placeholder=search_placeholder) }}">
                 <button class="btn btn-secondary my-2 my-sm-0 ml-2" type="submit">{{ _gettext('Search') }}</button>
+                
             </div>
         {% endif %}
     </form>
+    
 {% endmacro %}
 
 {% macro page_size_form(generator, btn_class='nav-link dropdown-toggle') %}

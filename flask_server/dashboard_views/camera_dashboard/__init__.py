@@ -28,7 +28,7 @@ from .utils import DirectoryZip, thumb_gen, copy_images
 from flask_admin.actions import action
 from flask_admin.babel import gettext, ngettext, lazy_gettext
 
-from .cam_model import CameraModel
+
 from flask_admin.contrib.sqla import ModelView
 from datetime import datetime
 
@@ -38,7 +38,11 @@ from flask_admin.model.template import TemplateLinkRowAction
 from flask_admin.helpers import (get_form_data, validate_form_on_submit,
                                  get_redirect_target, flash_errors)
 
+
+from .cam_model import CameraModel
 from ..trash_dashboard.trash_model import TrashModel
+from ..training_dashboard.train_model import TrainModel
+
 #from flask_admin.contrib.sqla.filters import  DateBetweenFilter
 from flask_admin.contrib.sqla import tools
 
@@ -114,7 +118,7 @@ class MyCameraDashboard(ModelView):
     export_max_rows = 10000
     # Index view html template
     # templates/
-    list_template = 'admin/Camera_Dashboard/list.html'
+    list_template = 'admin/camera_dashboard/list.html'
 
     # Modals
     edit_modal = True
@@ -186,8 +190,8 @@ class MyCameraDashboard(ModelView):
 
 
 
-    @action('approve', 'Approve', 'Are you sure you want to approve selected users?')
-    def action_approve(self, ids):
+    @action('train', 'Train', 'Are you sure you want to train selected records?')
+    def action_train(self, ids):
         try:
             print(f"\n\n ids : {ids}\n\n")
 
@@ -200,8 +204,8 @@ class MyCameraDashboard(ModelView):
             count = 0
             
             for m in query.all():
-                """
-                trash_model_db = TrashModel( id = m.id, 
+                
+                train_model_db = TrainModel( id = m.id, 
                                             full_thumbnails_store_path = m.full_thumbnails_store_path, 
                                             label = m.label,
                                             avgrating = m.avgrating,
@@ -209,30 +213,29 @@ class MyCameraDashboard(ModelView):
                                             prev_full_store_path = m.prev_full_store_path,
                                             current_full_store_path = m.current_full_store_path,
                                             filename = m.filename ,
-                                            trashed_at = datetime.now(),  
+                                            to_train_at = datetime.now(),  
                                             created_at = m.created_at)
-                self.session.add(trash_model_db)
-                """
-                print(f"\n\n Approved : \
+                self.session.add(train_model_db)
+                
+                print(f"\n\n Sending to training : \
                        m.id : {m.id} \
-                       m.created_at {m.created_at} \
                        m.full_thumbnails_store_path {m.full_thumbnails_store_path}\n") 
 
                 count += 1
             
             self.session.commit()
-            flash(ngettext('User was successfully approved.',
-                           '%(count)s users were successfully approved.',
+            flash(ngettext('the record was successfully sent to training.',
+                           '%(count)s records were successfully sent to training.',
                            count,
                            count=count))
         except Exception as ex:
             if not self.handle_view_exception(ex):
                 raise
 
-            flash(gettext('Failed to approve users. %(error)s', error=str(ex)), 'error')
+            flash(gettext('Failed to send records to training. %(error)s', error=str(ex)), 'error')
 
-        dictToSend = {'training':'True'}
-        res = requests.post( f"http://localhost:5111"+ self.get_url('.get_gallery'), json=dictToSend)
+        #dictToSend = {'training':'True'}
+        #res = requests.post( f"http://localhost:5111"+ self.get_url('.get_gallery'), json=dictToSend)
 
 
 
@@ -252,15 +255,20 @@ class MyCameraDashboard(ModelView):
 
             model.created_at = datetime.now()
             model.current_dashboard = "camera"
+            quality = model.avgrating
+            print(f"\n\n Quality Rating   : {quality}")
+
 
 
             imgs_names_list = os.listdir(current_directory)
             
             new_directory = os.path.join(file_path , f"{model.id}")
-            model.current_full_store_path = os.path.join( new_directory ,f"{model.filename}"  )
-
+            #model.current_full_store_path = os.path.join( new_directory ,f"{model.filename}"  )
+            
             if not os.path.exists( new_directory):
                 os.makedirs(new_directory)
+
+            model.current_full_store_path = new_directory
 
             copy_images(imgs_names_list = imgs_names_list , current_directory = current_directory, 
                         new_directory = new_directory, thumb_name = thumb_name,thumb_directory=thumb_directory)
@@ -374,7 +382,7 @@ class MyCameraDashboard(ModelView):
         # return send_from_directory("images", filename, as_attachment=True)
         #return self.render("admin/Camera_Dashboard/complete.html", image_name=filename)
         #return self.render('admin/Camera_Dashboard/camera_dashboard.html')
-        return self.render("admin/Camera_Dashboard/gallery.html", directory=images_direct_split, image_names=images_names_split, zip = zip)
+        return self.render("admin/camera_dashboard/gallery.html", directory=images_direct_split, image_names=images_names_split, zip = zip)
 
     @expose('/gallery/', methods=('GET', 'POST'))
     def get_gallery(self,): 
@@ -392,7 +400,7 @@ class MyCameraDashboard(ModelView):
             images_names_split.append(direct_name[1])
 
         #print(images_names_split)
-        return self.render("admin/Camera_Dashboard/gallery.html", directory=images_direct_split, image_names=images_names_split, zip = zip)
+        return self.render("admin/camera_dashboard/gallery.html", directory=images_direct_split, image_names=images_names_split, zip = zip)
 
     @expose('/camera_capture/', methods=( "GET", "POST",))
     def camera_capture(self):
@@ -459,8 +467,8 @@ class MyCameraDashboard(ModelView):
                                       current_dashboard = "camera",
                                       )
 
-        db.session.add(CameraModel_db)
-        db.session.commit()
+        self.session.add(CameraModel_db)
+        self.session.commit()
 
         flash(f"Image #{img_id} was successfully captured")
         #return self.render("admin/Camera_Dashboard/complete.html")

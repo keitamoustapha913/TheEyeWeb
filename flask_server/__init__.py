@@ -35,6 +35,7 @@ from flask_server.home_index.auth_model import User
 from flask_server.dashboard_views.expert_dashboard.exp_model import ExpertModel
 from flask_server.dashboard_views.camera_dashboard.cam_model import CameraModel
 from flask_server.dashboard_views.trash_dashboard.trash_model import TrashModel
+from flask_server.dashboard_views.training_dashboard.train_model import TrainModel
 
 # Create Flask application
 app = Flask(__name__)
@@ -64,6 +65,7 @@ from flask_server.home_index.views import MyModelView
 from flask_server.dashboard_views.expert_dashboard import MyExpertDashboard
 from flask_server.dashboard_views.camera_dashboard import MyCameraDashboard
 from flask_server.dashboard_views.trash_dashboard import MyTrashDashboard
+from flask_server.dashboard_views.training_dashboard import MyTrainingDashboard
 
 from flask_server.home_index import MyAdminIndexView
 
@@ -93,6 +95,8 @@ admin.add_view(MyExpertDashboard( model = ExpertModel, session = db.session , na
 # Trash Dashboard
 admin.add_view(MyTrashDashboard(model = TrashModel, session = db.session , name='Trash Dashboard',  endpoint= 'trash_dashboard'))
 
+# Training Dashboard
+admin.add_view(MyTrainingDashboard(model = TrainModel, session = db.session , name='Training Dashboard',  endpoint= 'training_dashboard'))
 
 """
 # Favicon 

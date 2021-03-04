@@ -31,8 +31,7 @@
             {{ model_layout.export_options() }}
         {% endif %}
 
-        {% block model_menu_bar_before_filters %} {% endblock %}
-
+        {% block model_menu_bar_before_filters %}{% endblock %}
 
         {% if filters %}
         <li class="nav-item dropdown">
@@ -59,9 +58,7 @@
         {% endif %}
 
         {% block model_menu_bar_after_filters %}
-            <li class="nav-item ml-2 my-0 py-0"></li>
-                <button id="CaptureButton" type="button" class="btn btn-primary  my-0 ml-2" style="box-sizing: border-box;">Capture</button>
-            </li>
+            <button id="StartTrainingButton" class="btn btn-secondary my-2 my-sm-0 ml-2" name="StartTrainingButton" >{{ _gettext('Start Training') }}</button>
         {% endblock model_menu_bar_after_filters %}
         
     </ul>
@@ -76,7 +73,7 @@
     <div class="table-responsive">
     <table class="table table-striped table-bordered table-dark table-hover model-list">
         <thead>
-            <tr>
+            <tr >
                 {% block list_header scoped %}
                     {% if actions %}
                     <th class="list-checkbox-column">
@@ -196,32 +193,23 @@
     <script>
             $(document).ready(function(){
             var clicked;
-            $("#CaptureButton").click(function(){
+            $("#StartTrainingButton").click(function(){
                 clicked = $(this).attr("name");
                 $.ajax({
                         type : 'POST',
-                        url : "{{ url_for('camera_dashboard.camera_capture') }}",
+                        url : "{{ url_for('training_dashboard.start_training') }}",
                         contentType: 'application/json;charset=UTF-8',
                         data : {'data':clicked},
 
                         success: function(data) {
 
                                             console.log(data.result);
-                                            window.location.href = "{{ url_for('camera_dashboard.index_view') }}" ;
-                                            /*
-                                            alert("Img Captured: " + "\nStatus: " + status);
-                                            $.get("{{ url_for('camera_dashboard.index_view') }}", 
-                                                        function(data, status){
-                                                        console.log("Image Capture " + "Status: " + status);
-                                                         
-                                                        //alert("Img Captured: " + "\nStatus: " + status);
-                                                });
-                                            */
-                                   
+                                            window.location.href = "{{ url_for('training_dashboard.index_view') }}" ;
+        
                                 }
                         });
                 });
-            });
+            }); 
     </script>
 
     <script src="{{ admin_static.url(filename='admin/js/bs4_modal.js', v='1.0.0') }}"></script>
