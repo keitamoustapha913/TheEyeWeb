@@ -5,7 +5,20 @@ import os
 from glob import glob
 import cv2
 
+
+#######################################################################################
+
 def dataset_maker(models = None, to_csv_path = '', is_training = True):
+    """[summary]
+
+    Args:
+        models ([type], optional): [description]. Defaults to None.
+        to_csv_path (str, optional): [description]. Defaults to ''.
+        is_training (bool, optional): [description]. Defaults to True.
+
+    Returns:
+        [type]: [description]
+    """
 
     if not os.path.exists(to_csv_path) and (to_csv_path != ''):
         os.makedirs(to_csv_path)
@@ -46,9 +59,18 @@ def dataset_maker(models = None, to_csv_path = '', is_training = True):
     return dataset_csv_path_list
 
 
+################################################################################
 
 def labeled_dirs_maker_from_csv(dirs_path_list = []):
-    if len(dirs_path_list) != 0 :
+    """[summary]
+
+    Args:
+        dirs_path_list (list, optional): [description]. Defaults to [].
+
+    Raises:
+        Exception: [description]
+    """
+    if len(dirs_path_list) == 0 :
         raise Exception("\n\n dirs_path_list is empty ")
     
 
@@ -65,10 +87,14 @@ def labeled_dirs_maker_from_csv(dirs_path_list = []):
             if not os.path.exists(new_dir):
                 os.makedirs( new_dir )
 
-
+##############################################################################
 
 def copy_images_to_label_from_csv(dataset_csv_path_list = []):
+    """[summary]
 
+    Args:
+        dataset_csv_path_list (list, optional): [description]. Defaults to [].
+    """
     for dataset_csv_path in dataset_csv_path_list:
         if not os.path.exists(dataset_csv_path):
             continue
@@ -89,7 +115,7 @@ def copy_images_to_label_from_csv(dataset_csv_path_list = []):
         copy_images_from_list(images_paths_list = images_paths_list, new_directory = to_dir_copy )
 
 
-
+##########################################################################
 
 def copy_images_from_list(images_paths_list = [], new_directory = ''):
     if not os.path.exists(new_directory) and (new_directory != ''):
@@ -104,9 +130,17 @@ def copy_images_from_list(images_paths_list = [], new_directory = ''):
             cv2.imwrite(os.path.join(new_directory, f'{image_name}' ) , image)
 
 
-
+#########################################################################
 
 def parse_images_dirs(images_dirs_list = []):
+    """[summary]
+
+    Args:
+        images_dirs_list (list, optional): [description]. Defaults to [].
+
+    Returns:
+        [type]: [description]
+    """
     images_paths_list = []
     for image_dir in images_dirs_list:
         image_path_list = parse_image_dir(image_dir = image_dir)
@@ -114,11 +148,21 @@ def parse_images_dirs(images_dirs_list = []):
 
     return images_paths_list
 
+#########################################################################
+
 def parse_image_dir(image_dir ='' , extensions = ('*.png', '*.jpg')):
+    """[summary]
+
+    Args:
+        image_dir (str, optional): [description]. Defaults to ''.
+        extensions (tuple, optional): [description]. Defaults to ( '*.png', '*.jpg').
+
+    Returns:
+        [list]: [description]
+    """
     image_path_list = []
     for ext in extensions:
         image_path_list.extend( glob( os.path.join(image_dir, ext)))
 
     return image_path_list
-
 
