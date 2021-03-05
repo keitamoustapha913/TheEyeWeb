@@ -44,8 +44,7 @@ from flask_admin.contrib.sqla import tools
 
 #from flask_admin.contrib.sqla.filters import  DateBetweenFilter
 
-
-import requests
+from .compile_fit_train import compile_fit
 
 
 
@@ -231,6 +230,8 @@ class MyTrainingDashboard(ModelView):
         labeled_dirs_maker_from_csv(dirs_path_list = dataset_csv_path_list)
 
         copy_images_to_label_from_csv(dataset_csv_path_list = dataset_csv_path_list)
+
+        compile_fit( data_dir = self.ml_training_path, batch_size = 2 , img_height = 180 , img_width = 180)
 
         flash(f" training #{img_id} was successfully started", category='success')
 
