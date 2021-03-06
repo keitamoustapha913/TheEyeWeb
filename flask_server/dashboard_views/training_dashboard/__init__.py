@@ -44,7 +44,10 @@ from flask_admin.contrib.sqla import tools
 
 #from flask_admin.contrib.sqla.filters import  DateBetweenFilter
 
-from .compile_fit_train import compile_fit
+#from .compile_fit_train import compile_fit
+
+
+import requests
 
 
 
@@ -80,7 +83,7 @@ class MyTrainingDashboard(ModelView):
         'label': 'Factory Part Label',
         'filename': 'Storage Filename',
         'created_at': 'Creation Date',
-        'trained_at': 'Sent to training Date'
+        'to_train_at': 'Sent to training Date'
     }
 
     " List of column to show in the table"
@@ -159,9 +162,6 @@ class MyTrainingDashboard(ModelView):
                 count = 0
 
                 for m in query.all():
-                    imgs_main_dir = m.current_full_store_path
-                    img_thumb_path = os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR'),m.full_thumbnails_store_path) 
-                    trash_delete(imgs_main_dir = imgs_main_dir, img_thumb_path = img_thumb_path )
 
                     if self.delete_model(m):
                         count += 1
@@ -214,6 +214,8 @@ class MyTrainingDashboard(ModelView):
                 # login
                 return redirect(url_for('admin.login_view', next=request.url))
 
+
+
     @expose('/start_training/', methods=("POST",))
     def start_training(self):
         print('\n TRAINING STARTING ...!\n\n')
@@ -231,7 +233,7 @@ class MyTrainingDashboard(ModelView):
 
         copy_images_to_label_from_csv(dataset_csv_path_list = dataset_csv_path_list)
 
-        compile_fit( data_dir = self.ml_training_path, batch_size = 2 , img_height = 180 , img_width = 180)
+        #compile_fit( data_dir = self.ml_training_path, batch_size = 2 , img_height = 180 , img_width = 180)
 
         flash(f" training #{img_id} was successfully started", category='success')
 

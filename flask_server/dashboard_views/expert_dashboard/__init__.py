@@ -1,4 +1,6 @@
-from flask import redirect,flash,make_response, url_for, request, jsonify, abort,render_template
+from flask import ( redirect,flash,make_response, url_for,
+                    request, jsonify, abort,render_template,
+                     send_from_directory)
 #from flask_server.model_views.expert_dashboard.exp_model import ExpertModel
 
 from flask_admin.contrib.sqla import ModelView
@@ -14,6 +16,7 @@ from sqlalchemy.event import listens_for
 from jinja2 import Markup
 
 from datetime import datetime
+import uuid
 
 from flask_admin import form as admin_form
 
@@ -28,7 +31,11 @@ from flask_admin.helpers import (get_form_data, validate_form_on_submit,
 
 from flask_admin.contrib.sqla import tools
 from ..trash_dashboard.trash_model import TrashModel
+from ..training_dashboard.train_model import TrainModel
 from .exp_model import ExpertModel
+
+from ..camera_dashboard.utils import copy_images, DirectoryZip
+
 import requests
 
 # Create directory for file fields to use
@@ -59,19 +66,27 @@ class MyExpertDashboard(ModelView):
         'qpred': 'Quality Predicted',
         'label': 'Factory Part Label',
         'filename': 'Storage Filename',
-      
+        'created_at': 'Creation Date',
     }
 
     " List of column to show in the table"
-    column_list = ( 'preview' , 'avgrating', 'qpred', 'label', 'filename' )
+    column_display_pk = True
+    column_list = ( 'preview' , 'avgrating', 'qpred', 'label', 'filename','created_at', )
     #column_exclude_list = ('current_full_store_path')
+
+    # Added default sort by created date
+    column_default_sort = ('created_at', True)
+
 
     """Searchable columns """
     column_searchable_list = ( 'label', 'filename' )
 
     column_editable_list = ( 'avgrating', 'label')
 
-    column_filters = ('avgrating', 'qpred')
+    column_filters = ['avgrating',
+                     'qpred', 
+                     'created_at',
+                     ]
 
     # Forms
     form_columns = ( 'filename', 'label', 'avgrating','qpred' ,  )
@@ -85,6 +100,16 @@ class MyExpertDashboard(ModelView):
         },
         
     }
+
+    can_create = True
+    can_edit = True
+    can_delete = True
+
+    # Export to csv
+    can_export = True
+    export_types = ['csv']
+    column_export_list = ['id', 'filename', 'label','avgrating','qpred','current_full_store_path' , 'full_thumbnails_store_path' ]
+    export_max_rows = 10000
 
 
     # Modals
@@ -100,6 +125,15 @@ class MyExpertDashboard(ModelView):
     # Pagination 
     can_set_page_size  = True # Edit number of items which can be ( 20 / 50 / 100 ) per page 
 
+
+    column_extra_row_actions = [    # Add a new action button
+                    #EndpointLinkRowAction(icon_class = 'fa fa-refresh', endpoint= '.my_action_f', title="Train it", ),
+                    # For downloading the row image
+                    TemplateLinkRowAction("row_actions.download_row", "Download this image set"),
+                ]
+    
+
+
     @action('delete',
             lazy_gettext('Delete'),
             lazy_gettext('Are you sure you want to delete selected records?'))
@@ -113,19 +147,7 @@ class MyExpertDashboard(ModelView):
                 count = 0
 
                 for m in query.all():
-                    """
-                    trash_model_db = TrashModel( id = m.id, 
-                            full_thumbnails_store_path = m.full_thumbnails_store_path, 
-                            label = m.label,
-                            avgrating = m.avgrating,
-                            qpred = m.qpred,
-                            prev_full_store_path = m.prev_full_store_path,
-                            current_full_store_path = m.current_full_store_path,
-                            filename = m.filename ,
-                            trashed_at = datetime.now(),  
-                            created_at = m.created_at)
-                    self.session.add(trash_model_db)
-                    """
+
                     if self.delete_model(m):
                         count += 1
 
@@ -141,9 +163,12 @@ class MyExpertDashboard(ModelView):
 
             flash(gettext('Failed to trash the records. %(error)s', error=str(ex)), 'error')
 
-    @action('approve', 'Approve', 'Are you sure you want to approve selected users?')
-    def action_approve(self, ids):
+
+    @action('train', 'Train', 'Are you sure you want to train selected records?')
+    def action_train(self, ids):
         try:
+            print(f"\n\n ids : {ids}\n\n")
+
             query = ExpertModel.query.filter(ExpertModel.id.in_(ids))
             #return_url = get_redirect_target() or self.get_url('.index_view')
             return_url = get_redirect_target() or self.get_url('admin.login_view')
@@ -151,8 +176,8 @@ class MyExpertDashboard(ModelView):
             count = 0
             
             for m in query.all():
-                """
-                trash_model_db = TrashModel( id = m.id, 
+                
+                train_model_db = TrainModel( id = m.id, 
                                             full_thumbnails_store_path = m.full_thumbnails_store_path, 
                                             label = m.label,
                                             avgrating = m.avgrating,
@@ -160,31 +185,90 @@ class MyExpertDashboard(ModelView):
                                             prev_full_store_path = m.prev_full_store_path,
                                             current_full_store_path = m.current_full_store_path,
                                             filename = m.filename ,
-                                            trashed_at = datetime.now(),  
+                                            to_train_at = datetime.now(),  
                                             created_at = m.created_at)
-                self.session.add(trash_model_db)
-                print(f"\n\n Approved : \
+                self.session.add(train_model_db)
+                """
+                print(f"\n\n Sending to training : \
                        m.id : {m.id} \
-                       m.created_at {m.created_at} \
                        m.full_thumbnails_store_path {m.full_thumbnails_store_path}\n") 
                 """
                 count += 1
             
             self.session.commit()
-            flash(ngettext('User was successfully approved.',
-                           '%(count)s users were successfully approved.',
+            flash(ngettext('the record was successfully sent to training.',
+                           '%(count)s records were successfully sent to training.',
                            count,
                            count=count))
         except Exception as ex:
             if not self.handle_view_exception(ex):
                 raise
 
-            flash(gettext('Failed to approve users. %(error)s', error=str(ex)), 'error')
+            flash(gettext('Failed to send records to training. %(error)s', error=str(ex)), 'error')
 
-        dictToSend = {'training':'True'}
-        res = requests.post( f"http://localhost:5111"+ self.get_url('.get_gallery'), json=dictToSend)
+        #dictToSend = {'training':'True'}
+        #res = requests.post( f"http://localhost:5111"+ self.get_url('.get_gallery'), json=dictToSend)
+
+
+
+    def after_model_change(self,form, model, is_created):
+        
+        if is_created:
+            img_id = uuid.uuid1()
+            #os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"Camera_Capture" )
+            #print(f"\n\n model before : {model.id} img_id : {img_id}")
+            current_directory = os.path.join( os.environ.get('SYMME_EYE_DATA_IMAGES_DIR') , "uploads")
+            model.id = img_id
+            model.prev_full_store_path =  os.path.join( current_directory, f"{model.filename}") 
+
+            thumb_name = admin_form.thumbgen_filename(  f"{model.filename}" )
+            thumb_directory = 'Data/Images/thumbnails' 
+            model.full_thumbnails_store_path = os.path.join( thumb_directory,thumb_name  ) 
+
+            model.created_at = datetime.now()
+            model.current_dashboard = "expert"
+            quality = model.avgrating
+            #print(f"\n\n Quality Rating   : {quality}")
+
+            imgs_names_list = os.listdir(current_directory)
+            
+            new_directory = os.path.join(file_path , f"{model.id}")
+            #model.current_full_store_path = os.path.join( new_directory ,f"{model.filename}"  )
+            
+            if not os.path.exists( new_directory):
+                os.makedirs(new_directory)
+
+            model.current_full_store_path = new_directory
+
+            copy_images(imgs_names_list = imgs_names_list , 
+                        current_directory = current_directory, 
+                        new_directory = new_directory, 
+                        thumb_name = thumb_name,
+                        thumb_directory=thumb_directory)
+
+            try:
+                self.session.commit()
+            except Exception as ex:
+                self.session.rollback()
 
     
+    def on_model_delete(self, model):
+        trash_model_db = TrashModel( id = model.id, 
+                            full_thumbnails_store_path = model.full_thumbnails_store_path, 
+                            label = model.label,
+                            avgrating = model.avgrating,
+                            qpred = model.qpred,
+                            prev_full_store_path = model.prev_full_store_path,
+                            current_full_store_path = model.current_full_store_path,
+                            filename = model.filename ,
+                            trashed_at = datetime.now(),  
+                            created_at = model.created_at,
+                            prev_dashboard = model.current_dashboard,
+                            current_dashboard = "trash",
+                            )
+        self.session.add(trash_model_db)
+        
+                 
     
 
     def is_accessible(self):
@@ -224,62 +308,55 @@ class MyExpertDashboard(ModelView):
     # In this case, Flask-Admin won't attempt to merge various parameters for the field.
     form_extra_fields = {
         'filename': admin_form.ImageUploadField( label = 'Image Upload Here',
-                                      base_path=file_path,
-                                      thumbnail_size=(100, 100, True))
+                                      base_path=os.path.join( os.environ.get('SYMME_EYE_DATA_IMAGES_DIR') , "uploads"),
+                                      thumbnail_size=(320, 180, True))
     }
 
-    # addding an extra row Action 
 
-    column_extra_row_actions = [
-                    TemplateLinkRowAction(template_name= 'row_actions.train_row', title= gettext('Train The Image Record'), )
-                ]
-    
 
     @expose('/')
     def index_view(self):
         
-        self._template_args['train_row_form'] = self.delete_form()
-
-        return super(MyExpertDashboard, self).index_view()
-
-    @expose('/my_action')
-    def my_action_f(self): 
-        actions, actions_confirmation = self.get_actions_list()
-        print(f"\n \n \n Return a list and a dictionary of allowed actions. Actions :  { actions} \n Confirmations {actions_confirmation} \n \n \n")
+        #self._template_args['train_row_form'] = self.delete_form()
+        self._template_args['download_row_form'] = self.delete_form()
         return super(MyExpertDashboard, self).index_view()
 
 
-    @expose('/trainit/', methods=('POST',))
-    def train_row_view(self):
+
+    @expose('/download_image/', methods=('POST',))
+    def download_row_view(self):
         """
-            trainit model view. Only POST method is allowed.
+            download image view. Only POST method is allowed.
         """
         return_url = get_redirect_target() or self.get_url('.index_view')
 
         # Using the default delete form as the train_row form 
       
-        train_row_form = self.delete_form()
+        download_row_form = self.delete_form()
 
-        if self.validate_form(train_row_form):
+        if self.validate_form(download_row_form):
             # id is InputRequired()
-            id = train_row_form.id.data
+            id = download_row_form.id.data
 
             model = self.get_one(id)
-
+            
             if model is None:
                 flash(gettext('Record does not exist.'), 'error')
                 return redirect(return_url)
 
             # message is flashed from within train_row_model if it fails
+            print(f"\n\n model path")
             
-            flash(f'Image #{id} was successfully trained .','success')
-            #return make_response(jsonify({"fullpath": model.full_store_path}), 200)
-            
+            directory = os.path.join(os.environ.get('SYMME_EYE_APPLICATION_DIR'), f"{model.current_full_store_path}")
+            to_zip_dir = os.path.join(os.environ.get('SYMME_EYE_APPLICATION_DIR'), "Data/Images/Downloads") 
+            zip_filename = DirectoryZip(dir_name = directory, to_zip_dir = to_zip_dir, id_stamp = f"{model.id}")
+            zip_download_name = os.path.basename(zip_filename) 
+
+            flash(f'Image #{id} was successfully downloaded .','success')
         else:
-            flash_errors(train_row_form, message='Failed to delete record. %(error)s')
+            flash_errors(download_row_form, message='Failed to download record. %(error)s')
 
-        return redirect(return_url)
-
+        return send_from_directory(to_zip_dir, f'{zip_download_name}', as_attachment = True)
 
 
 

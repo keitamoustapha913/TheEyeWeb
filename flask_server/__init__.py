@@ -120,8 +120,8 @@ def create_app(config_class=Config):
     # random database creation
     with app.app_context():
 
-        #db.create_all()
-        
+        db.create_all()
+        """
         db.drop_all()
         db.create_all()
 
@@ -136,16 +136,32 @@ def create_app(config_class=Config):
         
         print(df.head())
         for i in df.index:
-            avgrating = int(df.at[i,'Labels'])
-            path = df.at[i,'Filename']   #Filename,FileLinks,Labels
+            label = df.at[i,'Labels']
+            if (label is None) or (label ==''):
+                avgrating = label
+            else: 
+                avgrating =  label 
+
+            filename = df.at[i,'Filename']   #Filename,FileLinks,Labels
             qpred = df.at[i,'qpred']
-            ImgFolder = df.at[i,'ImgFolder']  
-            full_store_path = f"Data/Images/Init_firebase_extraction/Init_Images_Download/{ImgFolder}/{path}"
-            ExpertModel_db = ExpertModel(id = uuid.uuid1(), avgrating = avgrating, filename=path, qpred = qpred, current_full_store_path = full_store_path ,  full_thumbnails_store_path = full_store_path )
+            #ImgFolder = df.at[i,'ImgFolder'] 
+            current_full_store_path =  df.at[i,'current_full_store_path']
+            prev_full_store_path =  df.at[i,'prev_full_store_path']
+            full_thumbnails_store_path =  df.at[i,'full_thumbnails_store_path']
+            img_id =  df.at[i,'img_id']
+            #full_store_path = f"Data/Images/Init_firebase_extraction/Init_Images_Download/{ImgFolder}/{path}"
+
+            ExpertModel_db = ExpertModel(id = uuid.uuid1(), 
+                                         avgrating = avgrating, 
+                                         filename=filename, 
+                                         qpred = qpred, 
+                                         current_full_store_path = current_full_store_path , 
+                                         prev_full_store_path = prev_full_store_path, 
+                                         full_thumbnails_store_path = full_thumbnails_store_path )
             db.session.add(ExpertModel_db)
         
         db.session.commit()
-        
+        """
 
 
     return app

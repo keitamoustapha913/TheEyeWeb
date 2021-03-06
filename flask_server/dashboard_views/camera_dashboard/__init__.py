@@ -56,8 +56,6 @@ file_path = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"Camera_Cap
 
 class MyCameraDashboard(ModelView):
 
-   
-
     file_path = file_path
 
     # Table's Columns
@@ -81,7 +79,7 @@ class MyCameraDashboard(ModelView):
 
     " List of column to show in the table"
     column_display_pk = True
-    column_list = (  'id','preview' , 'avgrating', 'qpred', 'label', 'filename', 'created_at', )
+    column_list = ( 'preview' , 'avgrating', 'qpred', 'label', 'filename', 'created_at', )
     #column_exclude_list = ('full_store_path')
 
     # Added default sort by created date
@@ -194,8 +192,6 @@ class MyCameraDashboard(ModelView):
     def action_train(self, ids):
         try:
             print(f"\n\n ids : {ids}\n\n")
-
-
 
             query = CameraModel.query.filter(CameraModel.id.in_(ids))
             #return_url = get_redirect_target() or self.get_url('.index_view')
@@ -475,6 +471,8 @@ class MyCameraDashboard(ModelView):
         #return self.render("admin/Camera_Dashboard/gallery.html", directory=[f'{img_id}'], image_names=[thumb_name], zip = zip)
         result = {'result':'success'}
         return jsonify(result)
+
+
 
     @expose('/download_image/', methods=('POST',))
     def download_row_view(self):
