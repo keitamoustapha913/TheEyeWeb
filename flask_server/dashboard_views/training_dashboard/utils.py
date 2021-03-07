@@ -120,12 +120,13 @@ def copy_images_to_label_from_csv(dataset_csv_path_list = []):
 def copy_images_from_list(images_paths_list = [], new_directory = ''):
     if not os.path.exists(new_directory) and (new_directory != ''):
         os.makedirs(new_directory)
-
+    i = 0 
     for image_path in images_paths_list:
 
         if  os.path.exists(image_path) and (image_path != ''):
-
+            i = i + 1
             image_name = os.path.basename(image_path)
+            #image_name = f"img_{i}.png"
             image = cv2.imread(image_path, flags=cv2.IMREAD_UNCHANGED )
             cv2.imwrite(os.path.join(new_directory, f'{image_name}' ) , image)
 
