@@ -2,14 +2,11 @@ TheEye_web_admin.log
 .vscode/
 __pycache__/
 files/
-<<<<<<< HEAD
 *.png
 *.jpg
 *.jpeg
 *.csv
-=======
 *.png 
 *.jpeg 
 *.jpg 
->>>>>>> ml_dashboard
 
