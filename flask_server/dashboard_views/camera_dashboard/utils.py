@@ -29,7 +29,7 @@ def copy_images(imgs_names_list = [] , current_directory = '.', new_directory = 
             image = cv2.imread(os.path.join(current_directory, f'{img_name}' ), cv2.IMREAD_UNCHANGED)
             #thumb_directory =  os.path.join( os.path.dirname( os.path.dirname(new_directory) ) ,  f"thumbnails")
             thumb_directory = os.path.join(os.environ.get('SYMME_EYE_APPLICATION_DIR'), thumb_directory )
-            if not os.path.exists( thumb_directory):
+            if not os.path.exists( thumb_directory) and (thumb_directory != ''):
                 os.makedirs(thumb_directory)
             cv2.imwrite(os.path.join(thumb_directory, f'{img_name}', ) , image)
         os.remove( os.path.join(current_directory, f'{img_name}' ))

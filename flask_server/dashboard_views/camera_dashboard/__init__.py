@@ -23,6 +23,7 @@ from flask_admin import form as admin_form
 from .polar_camera import create_devices_with_tries, capture_polar
 from .thermal_camera import create_thermal, capture_therm
 from .utils import DirectoryZip, thumb_gen, copy_images
+from ..training_dashboard.utils import copy_images_from_list
 
 
 from flask_admin.actions import action
@@ -32,7 +33,7 @@ from flask_admin.babel import gettext, ngettext, lazy_gettext
 from flask_admin.contrib.sqla import ModelView
 from datetime import datetime
 
-from flask_server import db
+#from flask_server import db
 
 from flask_admin.model.template import TemplateLinkRowAction
 from flask_admin.helpers import (get_form_data, validate_form_on_submit,
@@ -42,6 +43,7 @@ from flask_admin.helpers import (get_form_data, validate_form_on_submit,
 from .cam_model import CameraModel
 from ..trash_dashboard.trash_model import TrashModel
 from ..training_dashboard.train_model import TrainModel
+from ..expert_dashboard.exp_model import ExpertModel
 
 #from flask_admin.contrib.sqla.filters import  DateBetweenFilter
 from flask_admin.contrib.sqla import tools
@@ -143,7 +145,10 @@ class MyCameraDashboard(ModelView):
                     #EndpointLinkRowAction(icon_class = 'fa fa-refresh', endpoint= '.my_action_f', title="Train it", ),
                     # For downloading the row image
                     TemplateLinkRowAction("row_actions.download_row", "Download this image set"),
+                    TemplateLinkRowAction("row_actions.save_to_expert_row", "Save this record !"),
+
                 ]
+
 
     @action('delete',
             lazy_gettext('Delete'),
@@ -208,9 +213,12 @@ class MyCameraDashboard(ModelView):
                                             qpred = m.qpred,
                                             prev_full_store_path = m.prev_full_store_path,
                                             current_full_store_path = m.current_full_store_path,
+                                            prev_dashboard = m.current_dashboard , 
+                                            current_dashboard = 'train',
                                             filename = m.filename ,
                                             to_train_at = datetime.now(),  
                                             created_at = m.created_at)
+
                 self.session.add(train_model_db)
                 
                 print(f"\n\n Sending to training : \
@@ -233,6 +241,64 @@ class MyCameraDashboard(ModelView):
         #dictToSend = {'training':'True'}
         #res = requests.post( f"http://localhost:5111"+ self.get_url('.get_gallery'), json=dictToSend)
 
+
+    @action('save', 'Save', 'Are you sure you want to save selected records?')
+    def action_save(self, ids):
+        try:
+            print(f"\n\n Saving to History the following records:\n\tids : {ids}\n\n")
+
+            query = CameraModel.query.filter(CameraModel.id.in_(ids))
+            #return_url = get_redirect_target() or self.get_url('.index_view')
+            return_url = get_redirect_target() or self.get_url('admin.login_view')
+            
+            count = 0
+            
+            #self.history_path =  os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR'),'Data', 'Images', 'history' )
+
+            for m in query.all():
+                current_directory = os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR'), f"{m.current_full_store_path}" )
+                images_paths_list = glob.glob( f"{current_directory}/*" )  
+
+                from_static_img_history_directory =  os.path.join( 'Data', 'Images', 'history', f'{m.id}')
+                new_dir = os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR'), from_static_img_history_directory )
+                copy_images_from_list(images_paths_list = images_paths_list, new_directory = new_dir )
+                
+                
+                expert_model_db = ExpertModel( id = m.id, 
+                                            full_thumbnails_store_path = m.full_thumbnails_store_path, 
+                                            label = m.label,
+                                            avgrating = m.avgrating,
+                                            qpred = m.qpred,
+                                            prev_full_store_path = m.current_full_store_path,
+                                            current_full_store_path = from_static_img_history_directory,
+                                            prev_dashboard = m.current_dashboard , 
+                                            current_dashboard = 'expert',
+                                            filename = m.filename ,
+                                            saved_at = datetime.now(),  
+                                            created_at = m.created_at)
+
+                self.session.add(expert_model_db)
+                
+                print(f"\n\n Sending to history : \
+                       id : {m.id} \
+                       current_full_store_path {from_static_img_history_directory}\n\
+                       prev_full_store_path {m.current_full_store_path}\n\n") 
+
+                self.session.flush()
+                self.session.delete(m)
+                
+                count += 1
+        
+            self.session.commit()
+            flash(ngettext('the record was successfully saved to expert dashboard.',
+                           '%(count)s records were successfully sent to expert.',
+                           count,
+                           count=count))
+        except Exception as ex:
+            if not self.handle_view_exception(ex):
+                raise
+
+            flash(gettext('Failed to send records to expert dashboard. %(error)s', error=str(ex)), 'error')
 
 
 
@@ -276,6 +342,11 @@ class MyCameraDashboard(ModelView):
 
     
     def on_model_delete(self, model):
+        print(f"\n\n\n model.prev_dashboard : {model.prev_dashboard}\
+                \n\n\n model.current_dashboard : {model.current_dashboard}\
+                \n\n ")
+
+
         trash_model_db = TrashModel( id = model.id, 
                             full_thumbnails_store_path = model.full_thumbnails_store_path, 
                             label = model.label,
@@ -290,6 +361,7 @@ class MyCameraDashboard(ModelView):
                             current_dashboard = "trash",
                             )
         self.session.add(trash_model_db)
+
         
                 
 
@@ -317,8 +389,9 @@ class MyCameraDashboard(ModelView):
 
     @expose('/')
     def index_view(self):
-        # Use the delete row form as a template for the download row form
+        # Use the delete row form as a template for the download row form # 
         self._template_args['download_row_form'] = self.delete_form()
+        self._template_args['save_to_expert_row_form'] = self.delete_form()
         #return self.render('admin/Camera_Dashboard/camera_dashboard.html')
         return super(MyCameraDashboard, self).index_view()
 
@@ -344,6 +417,9 @@ class MyCameraDashboard(ModelView):
                 # login
                 return redirect(url_for('admin.login_view', next=request.url))
     
+
+
+    """
     @expose('/upload/<directory>/<filename>', methods=( "GET", "POST",))
     def send_image(self, directory , filename):
         if directory == 'None':
@@ -397,6 +473,9 @@ class MyCameraDashboard(ModelView):
 
         #print(images_names_split)
         return self.render("admin/camera_dashboard/gallery.html", directory=images_direct_split, image_names=images_names_split, zip = zip)
+
+    """
+
 
     @expose('/camera_capture/', methods=( "GET", "POST",))
     def camera_capture(self):
@@ -516,3 +595,71 @@ class MyCameraDashboard(ModelView):
         return send_from_directory(to_zip_dir, f'{zip_download_name}', as_attachment = True)
 
 
+    @expose('/save_to_expert/', methods=('POST',))
+    def save_to_expert_row_view(self):
+        print(f"\n\nSaving to expert dashboard ...\n\n\n")
+
+        """
+            save image view. Only POST method is allowed.
+        """
+        return_url = get_redirect_target() or self.get_url('.index_view')
+
+        # Using the default delete form as the train_row form 
+      
+        save_to_expert_row_form = self.delete_form()
+
+        if self.validate_form(save_to_expert_row_form):
+            # id is InputRequired()
+            img_id = save_to_expert_row_form.id.data
+
+            model = self.get_one(img_id)
+            
+            if model is None:
+                flash(gettext('Record does not exist.'), 'error')
+                return redirect(return_url)
+
+            print(f"\n\nThe model id is : {model.id}\n\n")
+            current_directory = os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR'), f"{model.current_full_store_path}" )
+            images_paths_list = glob.glob( f"{current_directory}/*" )  
+
+            from_static_img_history_directory =  os.path.join( 'Data', 'Images', 'history', f'{model.id}')
+            new_dir = os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR'), from_static_img_history_directory )
+            copy_images_from_list(images_paths_list = images_paths_list, new_directory = new_dir )
+            
+            
+            expert_model_db = ExpertModel( id = model.id, 
+                                        full_thumbnails_store_path = model.full_thumbnails_store_path, 
+                                        label = model.label,
+                                        avgrating = model.avgrating,
+                                        qpred = model.qpred,
+                                        prev_full_store_path = model.current_full_store_path,
+                                        current_full_store_path = from_static_img_history_directory,
+                                        prev_dashboard = model.current_dashboard , 
+                                        current_dashboard = 'expert',
+                                        filename = model.filename ,
+                                        saved_at = datetime.now(),  
+                                        created_at = model.created_at)
+
+            self.session.add(expert_model_db)
+
+            print(f"\n\n Sending to history : \
+                    id : {model.id} \
+                    current_full_store_path {from_static_img_history_directory}\n\
+                    prev_full_store_path {model.current_full_store_path}\n\n") 
+
+            try:
+                self.session.flush()
+                self.session.delete(model)
+                self.session.commit()
+                flash(f'Image #{img_id} was successfully saved to expert dashboard.','success')
+            except Exception as ex:
+                if not self.handle_view_exception(ex):
+                    flash(gettext('Failed to delete record. %(error)s', error=str(ex)), 'error')
+
+                self.session.rollback()
+        
+        else:
+            flash_errors(save_to_expert_row_form, message='Failed to save the record. %(error)s')
+  
+        return redirect(return_url)
+        
