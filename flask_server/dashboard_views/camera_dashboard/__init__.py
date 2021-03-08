@@ -415,7 +415,7 @@ class MyCameraDashboard(ModelView):
             os.makedirs(directory)
 
         #images_direct_split = [f'{img_id}', f'{img_id}']
-
+        """
         #print(f"\n\n Devices used in the example: ")
         # open Thermal 
         cam_therm = create_thermal()
@@ -465,7 +465,7 @@ class MyCameraDashboard(ModelView):
 
         self.session.add(CameraModel_db)
         self.session.commit()
-
+        """
         flash(f"Image #{img_id} was successfully captured")
         #return self.render("admin/Camera_Dashboard/complete.html")
         #return self.render("admin/Camera_Dashboard/gallery.html", directory=[f'{img_id}'], image_names=[thumb_name], zip = zip)
@@ -499,7 +499,7 @@ class MyCameraDashboard(ModelView):
             print(f"\n\n model path")
             
             directory = os.path.join(os.environ.get('SYMME_EYE_APPLICATION_DIR'), f"{model.current_full_store_path}")
-            to_zip_dir = os.path.join(os.environ.get('SYMME_EYE_WEB_STATIC_DIR'), "Data/Images/Downloads") 
+            to_zip_dir = os.path.join(os.environ.get('SYMME_EYE_WEB_STATIC_DIR'), "Data/Images/downloads_zips") 
             zip_filename = DirectoryZip(dir_name = directory, to_zip_dir = to_zip_dir, id_stamp = f"{model.id}")
             zip_download_name = os.path.basename(zip_filename) 
 

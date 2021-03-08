@@ -348,7 +348,7 @@ class MyExpertDashboard(ModelView):
             print(f"\n\n model path")
             
             directory = os.path.join(os.environ.get('SYMME_EYE_APPLICATION_DIR'), f"{model.current_full_store_path}")
-            to_zip_dir = os.path.join(os.environ.get('SYMME_EYE_APPLICATION_DIR'), "Data/Images/Downloads") 
+            to_zip_dir = os.path.join(os.environ.get('SYMME_EYE_APPLICATION_DIR'), "Data/Images/downloads_zips") 
             zip_filename = DirectoryZip(dir_name = directory, to_zip_dir = to_zip_dir, id_stamp = f"{model.id}")
             zip_download_name = os.path.basename(zip_filename) 
 
