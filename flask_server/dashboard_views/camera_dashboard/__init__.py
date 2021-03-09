@@ -415,7 +415,7 @@ class MyCameraDashboard(ModelView):
             os.makedirs(directory)
 
         #images_direct_split = [f'{img_id}', f'{img_id}']
-
+        """
         #print(f"\n\n Devices used in the example: ")
         # open Thermal 
         cam_therm = create_thermal()
@@ -465,7 +465,7 @@ class MyCameraDashboard(ModelView):
 
         self.session.add(CameraModel_db)
         self.session.commit()
-
+        """
         flash(f"Image #{img_id} was successfully captured")
         #return self.render("admin/Camera_Dashboard/complete.html")
         #return self.render("admin/Camera_Dashboard/gallery.html", directory=[f'{img_id}'], image_names=[thumb_name], zip = zip)
