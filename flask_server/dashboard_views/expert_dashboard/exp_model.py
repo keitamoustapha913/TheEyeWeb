@@ -43,6 +43,7 @@ class ExpertModel(db.Model):
 
     created_at = db.Column(db.DateTime(), default=datetime.now())    
     restored_at = db.Column(db.DateTime())
+    saved_at = db.Column(db.DateTime())
     
     
     def __unicode__(self):

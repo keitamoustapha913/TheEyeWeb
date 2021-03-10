@@ -78,3 +78,27 @@
   </button>
 </form>
 {% endmacro %}
+
+
+
+{% macro save_to_expert_row(action, row_id, row) %}
+<form class="icon" method="POST" action="{{ get_url('.save_to_expert_row_view') }}">
+  
+  {% if save_to_expert_row_form.errors %}
+      {{ save_to_expert_row_form.errors }}
+  {% endif %}
+
+  {{ save_to_expert_row_form.id(value=get_pk_value(row)) }}
+  {{ save_to_expert_row_form.url(value=return_url) }}
+  {% if save_to_expert_row_form.csrf_token %}
+        {{ save_to_expert_row_form.csrf_token }}
+  {% elif csrf_token %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  {% endif %}
+  <button onclick="return faHelpers.safeConfirm('{{ _gettext('Are you sure you want to save this image set?') }}');" title="{{ _gettext('Save this image') }}">
+        <span class="fa fa-save" aria-hidden="true" style="color:white;"></span>
+  </button>
+</form>
+{% endmacro %}
+
+

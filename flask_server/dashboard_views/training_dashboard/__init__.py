@@ -43,7 +43,7 @@ from flask_admin.helpers import (get_form_data, validate_form_on_submit,
 from flask_admin.contrib.sqla import tools
 
 
-from .compile_fit_train import compile_fit
+#from .compile_fit_train import compile_fit
 
 
 
@@ -238,6 +238,7 @@ class MyTrainingDashboard(ModelView):
                      img_width = 256,
                      checkpoint_dir = self.ml_model_path,
                      )
+        #compile_fit( data_dir = self.ml_training_path, batch_size = 2 , img_height = 180 , img_width = 180)
 
         flash(f" training #{img_id} was successfully started", category='success')
 
