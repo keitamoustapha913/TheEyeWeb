@@ -5,14 +5,25 @@ import os
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers, metrics , optimizers , losses , models
-#from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report, confusion_matrix ,accuracy_score
 from ..training_dashboard.compile_fit_train import make_or_restore_model, configure_for_performance
 import time
 
 # Allow memory growth for the GPU
-physical_devices = tf.config.experimental.list_physical_devices('GPU')
-tf.config.experimental.set_memory_growth(physical_devices[0], True)
-
+#physical_devices = tf.config.experimental.list_physical_devices('GPU')
+#tf.config.experimental.set_memory_growth(physical_devices[0], True)
+gpus = tf.config.list_physical_devices('GPU')
+if gpus:
+  # Restrict TensorFlow to only allocate 1GB of memory on the first GPU
+  try:
+    tf.config.experimental.set_virtual_device_configuration(
+        gpus[0],
+        [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)])
+    logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+    print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+  except RuntimeError as e:
+    # Virtual devices must be set before GPUs have been initialized
+    print(e)
 
 
 def prediction( data_dir = '', batch_size = 2 , img_height = 256 , img_width = 256 , ml_model = None):
@@ -36,7 +47,7 @@ def prediction( data_dir = '', batch_size = 2 , img_height = 256 , img_width = 2
 
     #print(f"\n\n Number of testing batches: {tf.data.experimental.cardinality(test_ds).numpy()}")
 
-    #print(f"\n\nClasses names are : {class_names}\n\n")
+    print(f"\n\nClasses names are : {class_names}\n\n")
     #print(f"\n\ntf.data.AUTOTUNE : {tf.data.AUTOTUNE}\n\n")
 
     test_ds = configure_for_performance(test_ds)
@@ -52,32 +63,38 @@ def prediction( data_dir = '', batch_size = 2 , img_height = 256 , img_width = 2
                                   )
     print(f"\n\ntime to loaded the model : {time.time()-t2}")
     """
-    #Retrieve a batch of images from the test set
-    #image_batch, label_batch = test_ds.as_numpy_iterator().next()
-    #for img in image_batch:
-    #    print(f"image_batch[0] : {img} ")
-    #    break
 
     t2 = time.time()
+
+    predictions_list = []
+    labels_list = []
     for image_batch, label_batch in test_ds:
         t3 = time.time()
-        predictions = ml_model.predict_on_batch(image_batch).flatten()
-        predictions = tf.where(predictions < 0.5, 0, 1)
+        predictions_batch = ml_model.predict_on_batch(image_batch).flatten()
+        predictions_batch = tf.where(predictions_batch < 0.5, 0, 1)
         print(f"\n\ntime to make one batch loop : {time.time()-t3}")
-        print('Predictions:\n', predictions.numpy())
+        print('Predictions:\n', predictions_batch.numpy())
         print('Labels:\n', label_batch.numpy())
+        predictions_list.extend( list ( predictions_batch.numpy() ) )
+        labels_list.extend( list( label_batch.numpy() ) )
+    
+    #confusion =  confusion_matrix( labels_list  , predictions_list)
+    #print(f"\n\n Confusion Matrix:\n {confusion}")
+    #report =  classification_report( labels_list, predictions_list, target_names=class_names) 
+    #print(f"\n\n Classification Report:\n {report }")
+
+    accuracy = accuracy_score( labels_list , predictions_list)
+    print(f"\n\n accuracy :\n {accuracy }")
+
+    class_pred = [0 if accuracy > 0.5 else 1]
+    class_pred = class_names[class_pred[0]]
+    print(f"\n\n class_pred :\n {class_pred }")
 
     print(f"\n\ntime to make all batch loop : {time.time()-t2}")
-    #predictions = model.predict_on_batch(image_batch).flatten()
 
-    # Apply a sigmoid since our model returns logits
-    #predictions = tf.nn.sigmoid(predictions)
-    #predictions = tf.where(predictions < 0.5, 0, 1)
-
-    #print('Predictions:\n', predictions.numpy())
-    #print('Predictions:\n', predictions )
-    #print('Labels:\n', label_batch)
     print(f"\n\n\ntime to make all predictions : {time.time()-t1}\n\n\n")
+
+    return accuracy, class_pred
     
 
 

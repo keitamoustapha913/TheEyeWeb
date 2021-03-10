@@ -234,6 +234,8 @@ class MyPredictionDashboard(ModelView):
         if models is not None:
             
             for model in models:
+                trash_delete(imgs_main_dir = os.path.join(self.ml_testing_path) , img_thumb_path = '' )
+
                 dataset_csv_path_list = dataset_maker(models = model, 
                                                 to_csv_path = self.ml_testing_path , 
                                                 is_training = True,
@@ -246,23 +248,16 @@ class MyPredictionDashboard(ModelView):
 
                 copy_images_to_label_from_csv(dataset_csv_path_list = dataset_csv_path_list)
 
-                prediction( data_dir = self.ml_testing_path, 
-		            batch_size = batch_size , 
-		            img_height = img_height , 
-		            img_width = img_width , 
-		            ml_model = ml_model,
-		            )
-                """
-                labels = os.listdir(self.ml_testing_path)
-                for label in labels:
-                    root_ext = os.path.splitext(label)
-                    if root_ext =='.csv':
-                        trash_delete(imgs_main_dir = '' , img_thumb_path = os.path.join(self.ml_testing_path , f"{label}")  )
-                        continue
-                    trash_delete(imgs_main_dir = os.path.join(self.ml_testing_path , f"{label}") , img_thumb_path = '' )
-                """
+                accuracy, class_pred = prediction( data_dir = self.ml_testing_path, 
+                                                batch_size = batch_size , 
+                                                img_height = img_height , 
+                                                img_width = img_width , 
+                                                ml_model = ml_model,
+                                                )
+                model.qpred = class_pred
                 trash_delete(imgs_main_dir = os.path.join(self.ml_testing_path) , img_thumb_path = '' )
-		
+
+            self.session.commit()
 
         flash(f" training #{img_id} was successfully started", category='success')
 
