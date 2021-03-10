@@ -143,12 +143,9 @@ def create_app(config_class=Config):
 
     # random database creation
     with app.app_context():
-        
-        #db.create_all()
+                
         
         """
-        db.create_all()
-        
         db.drop_all()
         db.create_all()
 
@@ -181,7 +178,9 @@ def create_app(config_class=Config):
             ExpertModel_db = ExpertModel(id = uuid.uuid1(), 
                                          avgrating = avgrating, 
                                          filename=filename, 
-                                         qpred = qpred, 
+                                         qpred = qpred,
+                                         prev_dashboard = 'expert',
+                                         current_dashboard = 'expert', 
                                          current_full_store_path = current_full_store_path , 
                                          prev_full_store_path = prev_full_store_path, 
                                          full_thumbnails_store_path = full_thumbnails_store_path )

@@ -59,10 +59,6 @@ class MyTrainingDashboard(ModelView):
     if not os.path.exists(ml_training_path):
         os.makedirs(ml_training_path)
 
-    ml_testing_path = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'), "deep_learning_images", "testing_images"  )
-    if not os.path.exists(ml_testing_path):
-        os.makedirs(ml_testing_path)
-
     # Table's Columns
     column_descriptions = dict(
         preview="Preview of the Part's image",
@@ -236,9 +232,8 @@ class MyTrainingDashboard(ModelView):
                      batch_size = 2 , 
                      img_height = 256 , 
                      img_width = 256,
-                     checkpoint_dir = self.ml_model_path,
+                     checkpoint_dir = os.path.join( self.ml_model_path , "expert_architecture", "model" ) ,
                      )
-        #compile_fit( data_dir = self.ml_training_path, batch_size = 2 , img_height = 180 , img_width = 180)
 
         flash(f" training #{img_id} was successfully started", category='success')
 

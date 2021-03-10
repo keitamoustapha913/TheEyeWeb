@@ -72,7 +72,7 @@ class MyExpertDashboard(ModelView):
 
     " List of column to show in the table"
     column_display_pk = True
-    column_list = ( 'preview' , 'avgrating', 'qpred', 'label', 'filename','created_at', )
+    column_list = ( 'preview' , 'avgrating', 'qpred', 'label', 'filename','created_at','prev_dashboard', )
     #column_exclude_list = ('current_full_store_path')
 
     # Added default sort by created date
@@ -188,6 +188,8 @@ class MyExpertDashboard(ModelView):
                                             label = m.label,
                                             avgrating = m.avgrating,
                                             qpred = m.qpred,
+                                            prev_dashboard = m.current_dashboard,
+                                            current_dashboard =  'prediction',
                                             prev_full_store_path = m.prev_full_store_path,
                                             current_full_store_path = m.current_full_store_path,
                                             filename = m.filename ,
@@ -229,6 +231,8 @@ class MyExpertDashboard(ModelView):
                                             avgrating = m.avgrating,
                                             qpred = m.qpred,
                                             prev_full_store_path = m.prev_full_store_path,
+                                            prev_dashboard = m.current_dashboard,
+                                            current_dashboard =  'train',
                                             current_full_store_path = m.current_full_store_path,
                                             filename = m.filename ,
                                             to_train_at = datetime.now(),  

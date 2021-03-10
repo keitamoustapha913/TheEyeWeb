@@ -63,6 +63,13 @@ class MyPredictionDashboard(ModelView):
     ml_testing_path = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'), "deep_learning_images", "testing_images"  )
     if not os.path.exists(ml_testing_path):
         os.makedirs(ml_testing_path)
+    
+    dashboards_dict = {
+                        'camera': CameraModel ,
+                        'expert': ExpertModel,
+                        'train': TrainModel,
+                    }
+
 
     # Table's Columns
     column_descriptions = dict(
@@ -85,7 +92,7 @@ class MyPredictionDashboard(ModelView):
 
     " List of column to show in the table"
     column_display_pk = True
-    column_list = ( 'id', 'preview' , 'avgrating', 'qpred', 'label', 'filename','pred_at', )
+    column_list = ( 'id', 'preview' , 'avgrating', 'qpred', 'label', 'filename','pred_at','prev_dashboard', )
     #column_exclude_list = ('full_store_path')
 
     # Added default sort by sent to trainig date
@@ -221,13 +228,15 @@ class MyPredictionDashboard(ModelView):
         t1 = time.time()
         img_id = uuid.uuid1()
 
+
+
         if not os.path.exists(self.ml_model_path):
             raise f"Model Path ERROR : \n\t{ml_model_dir} does not exists \n Please train your model first"
-
-        ml_model = make_or_restore_model(checkpoint_dir = self.ml_model_path, 
-                                  img_height = img_height, 
-                                  img_width = img_width,
-                                  )
+        #  os.path.join( self.ml_model_path , "expert_architecture", "model" ) ,
+        ml_model = make_or_restore_model( checkpoint_dir = os.path.join( self.ml_model_path , "expert_architecture", "model" ), 
+                                          img_height = img_height, 
+                                          img_width = img_width,
+                                        )
 
         models = self.session.query(PredModel).all()
 
@@ -255,6 +264,9 @@ class MyPredictionDashboard(ModelView):
                                                 ml_model = ml_model,
                                                 )
                 model.qpred = class_pred
+                #print( f"\n\n  model.prev_dashboard : { model.prev_dashboard }\n\n")
+                dash_model_db = self.dashboards_dict[model.prev_dashboard].query.get(model.id)
+                dash_model_db.qpred = class_pred
                 trash_delete(imgs_main_dir = os.path.join(self.ml_testing_path) , img_thumb_path = '' )
 
             self.session.commit()

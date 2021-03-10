@@ -96,7 +96,7 @@ def compile_fit( data_dir = '', batch_size = 2 , img_height = 256 , img_width = 
                             mode='max',
                            ) ,
 
-        keras.callbacks.CSVLogger(filename = os.path.join( os.path.dirname(checkpoint_dir), "log_ml_csv","ml_train_log.csv" ), separator=",", append=False),
+        keras.callbacks.CSVLogger(filename = os.path.join( os.path.dirname(checkpoint_dir), "logs","ml_train_log.csv" ), separator=",", append=False),
 
         #PlotLearning(filename= os.path.join( checkpoint_dir,"ml_plot_learning_{val_accuracy:.2f}.png" ) ),
         
