@@ -102,5 +102,7 @@
       <a class="dropdown-item{% if page_size == 20 %} active{% endif %}" href="{{ generator(20) }}">20 {{ _gettext('items') }}</a>
       <a class="dropdown-item{% if page_size == 50 %} active{% endif %}" href="{{ generator(50) }}">50 {{ _gettext('items') }}</a>
       <a class="dropdown-item{% if page_size == 100 %} active{% endif %}" href="{{ generator(100) }}">100 {{ _gettext('items') }}</a>
+      <a class="dropdown-item{% if page_size == 500 %} active{% endif %}" href="{{ generator(500) }}">500 {{ _gettext('items') }}</a>
+      <a class="dropdown-item{% if page_size == 1000 %} active{% endif %}" href="{{ generator(1000) }}">1000 {{ _gettext('items') }}</a>
     </div>
 {% endmacro %}

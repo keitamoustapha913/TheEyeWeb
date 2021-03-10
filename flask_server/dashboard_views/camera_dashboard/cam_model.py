@@ -35,6 +35,8 @@ class CameraModel(db.Model):
     current_dashboard = db.Column(db.Unicode(32))
 
     machine_part_name = db.Column(db.Unicode(64))
+    
+    ml_model_dir = db.Column(db.Unicode(128))
 
     created_at = db.Column(db.DateTime(), default=datetime.now())    
     restored_at = db.Column(db.DateTime())

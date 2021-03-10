@@ -15,10 +15,15 @@ from datetime import datetime
 from pathlib import Path
 import uuid
 
+from .utils import prediction
 from ..camera_dashboard.utils import DirectoryZip
 from ..trash_dashboard.utils import trash_delete
-from .utils import ( dataset_maker, parse_images_dirs,
-                     labeled_dirs_maker_from_csv, copy_images_to_label_from_csv  )
+from ..training_dashboard.utils import ( dataset_maker, 
+                                         parse_images_dirs,
+                                         labeled_dirs_maker_from_csv,
+                                         copy_images_to_label_from_csv,  )
+
+from ..training_dashboard.compile_fit_train import make_or_restore_model
 
 from jinja2 import Markup
 from flask_admin import form as admin_form
@@ -29,12 +34,13 @@ from flask_admin.babel import gettext, ngettext, lazy_gettext
 from flask_admin.contrib.sqla import ModelView
 
 
-from flask_server import db
 
 from ..trash_dashboard.trash_model import TrashModel
 from ..camera_dashboard.cam_model import CameraModel
 from ..expert_dashboard.exp_model import ExpertModel
-from .train_model import TrainModel
+from ..training_dashboard.train_model import TrainModel
+from .pred_model import PredModel
+
 
 from flask_admin.model.template import TemplateLinkRowAction
 from flask_admin.helpers import (get_form_data, validate_form_on_submit,
@@ -43,21 +49,16 @@ from flask_admin.helpers import (get_form_data, validate_form_on_submit,
 from flask_admin.contrib.sqla import tools
 
 
-from .compile_fit_train import compile_fit
 
 
 
 
-class MyTrainingDashboard(ModelView):
+class MyPredictionDashboard(ModelView):
     
-    # Main Directory Creation for training
+    # Main Directory Creation for Predictions
     ml_model_path = os.path.join(os.environ.get('SYMME_EYE_DATA_DIR'),"ml_models" )
     if not os.path.exists(ml_model_path):
         os.makedirs(ml_model_path)
-
-    ml_training_path = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'),"deep_learning_images" , "training_images"  )
-    if not os.path.exists(ml_training_path):
-        os.makedirs(ml_training_path)
 
     ml_testing_path = os.path.join(os.environ.get('SYMME_EYE_DATA_IMAGES_DIR'), "deep_learning_images", "testing_images"  )
     if not os.path.exists(ml_testing_path):
@@ -79,18 +80,18 @@ class MyTrainingDashboard(ModelView):
         'label': 'Factory Part Label',
         'filename': 'Storage Filename',
         'created_at': 'Creation Date',
-        'to_train_at': 'Sent to training Date'
+        'to_pred_at': 'Sent to training Date'
     }
 
     " List of column to show in the table"
     column_display_pk = True
-    column_list = ( 'id', 'preview' , 'avgrating', 'qpred', 'label', 'filename','trained_at', )
+    column_list = ( 'id', 'preview' , 'avgrating', 'qpred', 'label', 'filename','pred_at', )
     #column_exclude_list = ('full_store_path')
 
     # Added default sort by sent to trainig date
-    column_default_sort = ('to_train_at', True)
+    column_default_sort = ('to_pred_at', True)
 
-    list_template = 'admin/training_dashboard/list.html' 
+    list_template = 'admin/prediction_dashboard/list.html' 
     """Default list view template"""
 
     """Searchable columns """
@@ -98,9 +99,8 @@ class MyTrainingDashboard(ModelView):
 
     column_filters =['avgrating',
                      'qpred', 
-                     
                      'created_at',
-                     'to_train_at',
+                     'to_pred_at',
                      ]
 
    
@@ -131,8 +131,6 @@ class MyTrainingDashboard(ModelView):
     """
 
                 
-
-    
     def _preview_thumbnail(view, context, model, name):
         if not model.full_thumbnails_store_path:
             return ''
@@ -186,7 +184,7 @@ class MyTrainingDashboard(ModelView):
     @expose('/')
     def index_view(self):
    
-        return super(MyTrainingDashboard, self).index_view()
+        return super(MyPredictionDashboard, self).index_view()
 
     
     def is_accessible(self):
@@ -212,32 +210,59 @@ class MyTrainingDashboard(ModelView):
 
 
 
-    @expose('/start_training/', methods=("POST",))
-    def start_training(self):
-        print('\n TRAINING STARTING ...!\n\n')
+    @expose('/start_predicting/', methods=("POST",))
+    def start_predicting(self):
+        print('\n PREDICTION STARTING ...!\n\n')
+
+        batch_size = 4  
+        img_height = 256 
+        img_width = 256
         
         t1 = time.time()
         img_id = uuid.uuid1()
 
-        models = self.session.query(TrainModel).all()
+        if not os.path.exists(self.ml_model_path):
+            raise f"Model Path ERROR : \n\t{ml_model_dir} does not exists \n Please train your model first"
+
+        ml_model = make_or_restore_model(checkpoint_dir = self.ml_model_path, 
+                                  img_height = img_height, 
+                                  img_width = img_width,
+                                  )
+
+        models = self.session.query(PredModel).all()
+
         if models is not None:
-            dataset_csv_path_list = dataset_maker(models = models, 
-                                                to_csv_path = self.ml_training_path , 
-                                                is_training = True)
+            
+            for model in models:
+                dataset_csv_path_list = dataset_maker(models = model, 
+                                                to_csv_path = self.ml_testing_path , 
+                                                is_training = True,
+                                                is_one_model = True)
+            
+                dataset_csv_path_list = glob.glob( f"{self.ml_testing_path}/*.csv")
+                print( f" len dataset_csv_path_list : { len(dataset_csv_path_list) }")
 
-        dataset_csv_path_list = glob.glob( f"{self.ml_training_path}/*.csv")
-        print( f" len dataset_csv_path_list : { len(dataset_csv_path_list) }")
+                labeled_dirs_maker_from_csv(dirs_path_list = dataset_csv_path_list)
 
-        labeled_dirs_maker_from_csv(dirs_path_list = dataset_csv_path_list)
+                copy_images_to_label_from_csv(dataset_csv_path_list = dataset_csv_path_list)
 
-        copy_images_to_label_from_csv(dataset_csv_path_list = dataset_csv_path_list)
-
-        compile_fit( data_dir = self.ml_training_path,
-                     batch_size = 2 , 
-                     img_height = 256 , 
-                     img_width = 256,
-                     checkpoint_dir = self.ml_model_path,
-                     )
+                prediction( data_dir = self.ml_testing_path, 
+		            batch_size = batch_size , 
+		            img_height = img_height , 
+		            img_width = img_width , 
+		            ml_model = ml_model,
+		            )
+                """
+                labels = os.listdir(self.ml_testing_path)
+                for label in labels:
+                    root_ext = os.path.splitext(label)
+                    if root_ext =='.csv':
+                        trash_delete(imgs_main_dir = '' , img_thumb_path = os.path.join(self.ml_testing_path , f"{label}")  )
+                        continue
+                    trash_delete(imgs_main_dir = os.path.join(self.ml_testing_path , f"{label}") , img_thumb_path = '' )
+                """
+                trash_delete(imgs_main_dir = os.path.join(self.ml_testing_path) , img_thumb_path = '' )
+		
 
         flash(f" training #{img_id} was successfully started", category='success')
 

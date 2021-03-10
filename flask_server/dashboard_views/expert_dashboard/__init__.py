@@ -32,6 +32,7 @@ from flask_admin.helpers import (get_form_data, validate_form_on_submit,
 from flask_admin.contrib.sqla import tools
 from ..trash_dashboard.trash_model import TrashModel
 from ..training_dashboard.train_model import TrainModel
+from ..prediction_dashboard.pred_model import PredModel
 from .exp_model import ExpertModel
 
 from ..camera_dashboard.utils import copy_images, DirectoryZip
@@ -105,6 +106,11 @@ class MyExpertDashboard(ModelView):
     can_edit = True
     can_delete = True
 
+    # To view preview image
+    can_view_details = True
+    column_details_list = [ 'preview','avgrating','qpred', 'label','filename' ,'created_at' ]
+    
+
     # Export to csv
     can_export = True
     export_types = ['csv']
@@ -164,6 +170,46 @@ class MyExpertDashboard(ModelView):
             flash(gettext('Failed to trash the records. %(error)s', error=str(ex)), 'error')
 
 
+    @action('prediction', 'Prediction', 'Are you sure you want to predict the quality of selected records?')
+    def action_prediction(self, ids):
+        try:
+            print(f"\n\n ids : {ids}\n\n")
+
+            query = ExpertModel.query.filter(ExpertModel.id.in_(ids))
+            #return_url = get_redirect_target() or self.get_url('.index_view')
+            return_url = get_redirect_target() or self.get_url('admin.login_view')
+            
+            count = 0
+            
+            for m in query.all():
+                
+                pred_model_db = PredModel( id = m.id, 
+                                            full_thumbnails_store_path = m.full_thumbnails_store_path, 
+                                            label = m.label,
+                                            avgrating = m.avgrating,
+                                            qpred = m.qpred,
+                                            prev_full_store_path = m.prev_full_store_path,
+                                            current_full_store_path = m.current_full_store_path,
+                                            filename = m.filename ,
+                                            to_pred_at = datetime.now(),  
+                                            created_at = m.created_at)
+                self.session.add(pred_model_db)
+
+                count += 1
+            
+            self.session.commit()
+            flash(ngettext('The record was successfully sent for prediction.',
+                           '%(count)s records were successfully sent for predictions.',
+                           count,
+                           count=count))
+        except Exception as ex:
+            if not self.handle_view_exception(ex):
+                raise
+
+            flash(gettext('Failed to send records to predictions. %(error)s', error=str(ex)), 'error')
+
+
+
     @action('train', 'Train', 'Are you sure you want to train selected records?')
     def action_train(self, ids):
         try:
@@ -205,9 +251,6 @@ class MyExpertDashboard(ModelView):
                 raise
 
             flash(gettext('Failed to send records to training. %(error)s', error=str(ex)), 'error')
-
-        #dictToSend = {'training':'True'}
-        #res = requests.post( f"http://localhost:5111"+ self.get_url('.get_gallery'), json=dictToSend)
 
 
 

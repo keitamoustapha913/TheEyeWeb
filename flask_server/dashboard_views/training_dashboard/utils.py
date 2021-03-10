@@ -8,7 +8,7 @@ import cv2
 
 #######################################################################################
 
-def dataset_maker(models = None, to_csv_path = '', is_training = True):
+def dataset_maker(models = None, to_csv_path = '', is_training = True, is_one_model = False):
     """[summary]
 
     Args:
@@ -25,15 +25,23 @@ def dataset_maker(models = None, to_csv_path = '', is_training = True):
 
     images_dirs_list = []
     images_labels_list = []
-    for m in models:
-        #print(f"\n\n m.id : {m.avgrating} m.current_full_store_path : {m.current_full_store_path}")
-        #print(f"\n\n m.id : {m.avgrating} m.full_thumbnails_store_path : {m.full_thumbnails_store_path}")
+
+    if not is_one_model:
+        for m in models:
+            #print(f"\n\n m.id : {m.avgrating} m.current_full_store_path : {m.current_full_store_path}")
+            #print(f"\n\n m.id : {m.avgrating} m.full_thumbnails_store_path : {m.full_thumbnails_store_path}")
+            if (m.avgrating is not None) or (m.avgrating != -99) or (m.avgrating !=''):
+                images_labels_list.append(m.avgrating)
+                images_dirs_list.append( os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR') , m.current_full_store_path ) )
+        print(f"\n\n Number of models {len(models)}")
+    else:
+        m = models
         if (m.avgrating is not None) or (m.avgrating != -99) or (m.avgrating !=''):
             images_labels_list.append(m.avgrating)
-            images_dirs_list.append(m.current_full_store_path)
+            images_dirs_list.append( os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR') , m.current_full_store_path ) )
 
-    print(f"\n\n Number of models {len(images_dirs_list)}")
-    print(f"\n\n Number of models {len(images_dirs_list)}")       
+    
+    print(f"\n\n Number of images_dirs_list {len(images_dirs_list)}")       
 
     df = pd.DataFrame( {
         'images_dirs': images_dirs_list,

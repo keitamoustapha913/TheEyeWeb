@@ -1,4 +1,6 @@
-from flask import Flask,url_for, send_from_directory
+#!/usr/bin/env python3
+
+from flask import Flask,url_for #, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_server.config import Config
 import string
@@ -36,6 +38,8 @@ from flask_server.dashboard_views.expert_dashboard.exp_model import ExpertModel
 from flask_server.dashboard_views.camera_dashboard.cam_model import CameraModel
 from flask_server.dashboard_views.trash_dashboard.trash_model import TrashModel
 from flask_server.dashboard_views.training_dashboard.train_model import TrainModel
+from flask_server.dashboard_views.prediction_dashboard.pred_model import PredModel
+
 
 # Create Flask application
 app = Flask(__name__)
@@ -66,6 +70,8 @@ from flask_server.dashboard_views.expert_dashboard import MyExpertDashboard
 from flask_server.dashboard_views.camera_dashboard import MyCameraDashboard
 from flask_server.dashboard_views.trash_dashboard import MyTrashDashboard
 from flask_server.dashboard_views.training_dashboard import MyTrainingDashboard
+from flask_server.dashboard_views.prediction_dashboard import MyPredictionDashboard
+
 
 from flask_server.home_index import MyAdminIndexView
 
@@ -90,13 +96,31 @@ admin.add_view(MyCameraDashboard(model = CameraModel,
 
 
 # Expert Dashboard 
-admin.add_view(MyExpertDashboard( model = ExpertModel, session = db.session , name='Expert Dashboard', endpoint= 'expert_dashboard') )
+admin.add_view(MyExpertDashboard( model = ExpertModel, 
+                                  session = db.session , 
+                                  name='Expert Dashboard', 
+                                  endpoint= 'expert_dashboard') 
+                                  )
 
 # Trash Dashboard
-admin.add_view(MyTrashDashboard(model = TrashModel, session = db.session , name='Trash Dashboard',  endpoint= 'trash_dashboard'))
+admin.add_view(MyTrashDashboard( model = TrashModel, 
+                                 session = db.session , 
+                                 name='Trash Dashboard',  
+                                 endpoint= 'trash_dashboard')
+                                 )
 
 # Training Dashboard
-admin.add_view(MyTrainingDashboard(model = TrainModel, session = db.session , name='Training Dashboard',  endpoint= 'training_dashboard'))
+admin.add_view(MyTrainingDashboard( model = TrainModel, 
+                                    session = db.session , 
+                                    name='Training Dashboard',  
+                                    endpoint= 'training_dashboard'))
+
+# Prediction Dashboard
+admin.add_view(MyPredictionDashboard( model = PredModel, 
+                                      session = db.session , 
+                                      name='Prediction Dashboard',  
+                                      endpoint= 'prediction_dashboard'))
+
 
 """
 # Favicon 
@@ -119,8 +143,9 @@ def create_app(config_class=Config):
 
     # random database creation
     with app.app_context():
-
-        db.create_all()
+        
+        #db.create_all()
+        """
         
         db.drop_all()
         db.create_all()
@@ -161,7 +186,7 @@ def create_app(config_class=Config):
             db.session.add(ExpertModel_db)
         
         db.session.commit()
-        
+        """
 
 
     return app

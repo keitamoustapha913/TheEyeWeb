@@ -9,7 +9,7 @@ from sqlalchemy_utils import ChoiceType,UUIDType
 from flask_admin.babel import lazy_gettext as _
 
 
-class ExpertModel(db.Model):
+class PredModel(db.Model):
 
     QualityChoices = [
             ( -99 , _(u'') ),
@@ -20,11 +20,10 @@ class ExpertModel(db.Model):
             ( 5 , _(u'Five') ),
     ]
 
-    
     id = db.Column(UUIDType(binary=False), default=uuid.uuid1(), primary_key=True)
     preview = db.Column(db.Unicode(128))
     label = db.Column(db.Unicode(64))
-    
+
     avgrating = db.Column(ChoiceType(QualityChoices, impl=db.Integer()), nullable=True)
     qpred = db.Column(db.Unicode(128))
 
@@ -44,7 +43,9 @@ class ExpertModel(db.Model):
     created_at = db.Column(db.DateTime(), default=datetime.now())    
     restored_at = db.Column(db.DateTime())
     
-    
+    to_pred_at = db.Column(db.DateTime(), default=datetime.now()) 
+    pred_at = db.Column(db.DateTime())
+
+
     def __unicode__(self):
         return self.name
-
