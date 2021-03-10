@@ -82,4 +82,13 @@ def prediction( data_dir = '', batch_size = 2 , img_height = 256 , img_width = 2
 
 
 
-#make_or_restore_model(checkpoint_dir = '', img_height = 256, img_width = 256)
+
+"""
+labels = os.listdir(self.ml_testing_path)
+for label in labels:
+    root_ext = os.path.splitext(label)
+    if root_ext =='.csv':
+        trash_delete(imgs_main_dir = '' , img_thumb_path = os.path.join(self.ml_testing_path , f"{label}")  )
+        continue
+    trash_delete(imgs_main_dir = os.path.join(self.ml_testing_path , f"{label}") , img_thumb_path = '' )
+"""

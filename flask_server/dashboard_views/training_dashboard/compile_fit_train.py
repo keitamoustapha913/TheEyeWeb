@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""
+
 import numpy as np
 
 import os
@@ -11,6 +11,10 @@ from tensorflow.keras.models import Sequential
 
 from matplotlib import pyplot as plt
 import pathlib
+
+# Allow memory growth for the GPU
+physical_devices = tf.config.experimental.list_physical_devices('GPU')
+tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 AUTOTUNE = tf.data.AUTOTUNE
 
@@ -259,9 +263,8 @@ class PlotLearning(keras.callbacks.Callback):
 def configure_for_performance(ds , batch_size = 32):
     ds = ds.cache()
     ds = ds.shuffle(buffer_size=1000)
-    ds = ds.batch(batch_size)
     ds = ds.prefetch(buffer_size=AUTOTUNE)
     return ds
 
 
-"""
+
