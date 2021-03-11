@@ -155,7 +155,9 @@ def create_app(config_class=Config):
 
 
         db.session.commit()
-        # /home/devinsider/Documents/Projects/SymmeEye/Application/Eye_App/TheEyeWeb/flask_server/static/Data/csv/Init_firebase_extraction/Init_csv_to_server/init_flask_csv_labeled_82c766d6-72c8-11eb-95b7-00155ddf6e13.csv
+        # 
+        #   Expert Init 
+        #
         df = pd.read_csv(  os.path.join( os.environ.get('SYMME_EYE_DATA_CSV_DIR') , "Init_firebase_extraction", "Init_csv_to_server", "init_flask_csv_full_82c766d6-72c8-11eb-95b7-00155ddf6e13.csv" ), sep=',')
         
         print(df.head())
@@ -187,7 +189,41 @@ def create_app(config_class=Config):
             db.session.add(ExpertModel_db)
         
         db.session.commit()
-        """
 
+
+        # 
+        #   Hot Cold dataset Init 
+        #/home/sapristi/Documents/Projects/SymmeEye/Application/Data/csv/hot_cold_dataset/csv_to_flask/hot_cold_full_df.csv
+        df = pd.read_csv(  os.path.join( os.environ.get('SYMME_EYE_DATA_CSV_DIR') , "hot_cold_dataset", "csv_to_flask", "hot_cold_full_df.csv" ), sep=',')
+        
+        print(df.head())
+        for i in df.index:
+
+            avgrating = int( df.at[i,'Quality Rating'] )
+
+            label = str( df.at[i,'Factory Part Label'] )
+
+            filename = df.at[i,'Storage Filename']  
+            qpred = df.at[i,'Quality Predicted']
+
+            current_full_store_path =  df.at[i,'Current Full Store Path']
+            prev_full_store_path =  df.at[i,'Current Full Store Path']
+            full_thumbnails_store_path =  df.at[i,'Full Thumbnails Store Path']
+            img_id =  df.at[i,'Id']
+
+            CameraModel_db = CameraModel(id = uuid.uuid1(), 
+                                         avgrating = avgrating, 
+                                         filename=filename, 
+                                         qpred = qpred,
+                                         label = label,
+                                         prev_dashboard = 'camera',
+                                         current_dashboard = 'camera', 
+                                         current_full_store_path = current_full_store_path , 
+                                         prev_full_store_path = prev_full_store_path, 
+                                         full_thumbnails_store_path = full_thumbnails_store_path )
+            db.session.add(CameraModel_db)
+        
+        db.session.commit()
+        """
 
     return app

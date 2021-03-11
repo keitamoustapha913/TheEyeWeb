@@ -43,7 +43,7 @@ from flask_admin.helpers import (get_form_data, validate_form_on_submit,
 from flask_admin.contrib.sqla import tools
 
 
-#from .compile_fit_train import compile_fit
+from .compile_fit_train import compile_fit
 
 
 
@@ -226,13 +226,13 @@ class MyTrainingDashboard(ModelView):
 
         labeled_dirs_maker_from_csv(dirs_path_list = dataset_csv_path_list)
 
-        copy_images_to_label_from_csv(dataset_csv_path_list = dataset_csv_path_list)
+        copy_images_to_label_from_csv(dataset_csv_path_list = dataset_csv_path_list, is_hot_cold = True)
 
         compile_fit( data_dir = self.ml_training_path,
                      batch_size = 2 , 
                      img_height = 256 , 
                      img_width = 256,
-                     checkpoint_dir = os.path.join( self.ml_model_path , "expert_architecture", "model" ) ,
+                     checkpoint_dir = os.path.join( self.ml_model_path , "hot_cold_test_architecture", "model" ) ,
                      )
 
         flash(f" training #{img_id} was successfully started", category='success')

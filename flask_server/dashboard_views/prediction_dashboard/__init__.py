@@ -255,7 +255,7 @@ class MyPredictionDashboard(ModelView):
 
                 labeled_dirs_maker_from_csv(dirs_path_list = dataset_csv_path_list)
 
-                copy_images_to_label_from_csv(dataset_csv_path_list = dataset_csv_path_list)
+                copy_images_to_label_from_csv(dataset_csv_path_list = dataset_csv_path_list  , is_hot_cold = True)
 
                 accuracy, class_pred = prediction( data_dir = self.ml_testing_path, 
                                                 batch_size = batch_size , 

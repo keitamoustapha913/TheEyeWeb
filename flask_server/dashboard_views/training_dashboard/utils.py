@@ -8,7 +8,7 @@ import cv2
 
 #######################################################################################
 
-def dataset_maker(models = None, to_csv_path = '', is_training = True, is_one_model = False):
+def dataset_maker(models = None, to_csv_path = '', is_training = True, is_one_model = False, is_binary_class = True):
     """[summary]
 
     Args:
@@ -19,6 +19,14 @@ def dataset_maker(models = None, to_csv_path = '', is_training = True, is_one_mo
     Returns:
         [type]: [description]
     """
+    ratings_dict = {
+                      'One':1 ,
+                      'Two':2 ,
+                      'Three':3 ,
+                      'Four':4 ,
+                      'Five':5 ,
+
+                    }
 
     if not os.path.exists(to_csv_path) and (to_csv_path != ''):
         os.makedirs(to_csv_path)
@@ -31,14 +39,20 @@ def dataset_maker(models = None, to_csv_path = '', is_training = True, is_one_mo
             #print(f"\n\n m.id : {m.avgrating} m.current_full_store_path : {m.current_full_store_path}")
             #print(f"\n\n m.id : {m.avgrating} m.full_thumbnails_store_path : {m.full_thumbnails_store_path}")
             if (m.avgrating is not None) or (m.avgrating != -99) or (m.avgrating !=''):
-                images_labels_list.append(m.avgrating)
-                images_dirs_list.append( os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR') , m.current_full_store_path ) )
+                if is_binary_class:
+                    avgrating = m.avgrating
+                    avgrating = [ 'Two' if int(ratings_dict[avgrating.value] ) > 2 else 'One' ]
+                    images_labels_list.append(avgrating[0])
+                    images_dirs_list.append( os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR') , m.current_full_store_path ) )
         print(f"\n\n Number of models {len(models)}")
     else:
         m = models
         if (m.avgrating is not None) or (m.avgrating != -99) or (m.avgrating !=''):
-            images_labels_list.append(m.avgrating)
-            images_dirs_list.append( os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR') , m.current_full_store_path ) )
+            if is_binary_class:
+                avgrating = m.avgrating
+                avgrating = [ 'Two' if int(ratings_dict[avgrating.value] ) > 2 else 'One' ]
+                images_labels_list.append(avgrating[0])
+                images_dirs_list.append( os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR') , m.current_full_store_path ) )
 
     
     print(f"\n\n Number of images_dirs_list {len(images_dirs_list)}")       
@@ -97,7 +111,7 @@ def labeled_dirs_maker_from_csv(dirs_path_list = []):
 
 ##############################################################################
 
-def copy_images_to_label_from_csv(dataset_csv_path_list = []):
+def copy_images_to_label_from_csv(dataset_csv_path_list = [],  is_hot_cold = False):
     """[summary]
 
     Args:
@@ -120,23 +134,34 @@ def copy_images_to_label_from_csv(dataset_csv_path_list = []):
 
         images_paths_list =  parse_images_dirs(images_dirs_list = images_dirs_list)
 
-        copy_images_from_list(images_paths_list = images_paths_list, new_directory = to_dir_copy )
+        copy_images_from_list(images_paths_list = images_paths_list, new_directory = to_dir_copy  , is_hot_cold = is_hot_cold)
 
 
 ##########################################################################
 
-def copy_images_from_list(images_paths_list = [], new_directory = ''):
+def copy_images_from_list(images_paths_list = [], new_directory = '', is_hot_cold = False):
     if not os.path.exists(new_directory) and (new_directory != ''):
         os.makedirs(new_directory)
     i = 0 
     for image_path in images_paths_list:
+        image_name = os.path.basename(image_path)
+
+        if is_hot_cold: #from_thermal_colormap_Hot_to_png_with_opencv_0bceef8c-79b6-11eb-81d4-00044bec23a2
+            if "from_thermal_" not in image_name:
+                continue
 
         if  os.path.exists(image_path) and (image_path != ''):
             i = i + 1
-            image_name = os.path.basename(image_path)
+            #image_name = os.path.basename(image_path)
             #image_name = f"img_{i}.png"
             image = cv2.imread(image_path, flags=cv2.IMREAD_UNCHANGED )
-            cv2.imwrite(os.path.join(new_directory, f'{image_name}' ) , image)
+            if (len(image.shape) ==3 ) and ( image.shape[2] != 4 ):
+                cv2.imwrite(os.path.join(new_directory, f'{image_name}' ) , image)
+            elif (len(image.shape) == 2 ):
+                image = cv2.merge( (image, image, image ) )
+                cv2.imwrite(os.path.join(new_directory, f'{image_name}' ) , image)
+            else:
+                pass
 
 
 #########################################################################
