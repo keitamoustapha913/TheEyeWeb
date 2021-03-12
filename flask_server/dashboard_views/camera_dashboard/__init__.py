@@ -44,6 +44,7 @@ from .cam_model import CameraModel
 from ..trash_dashboard.trash_model import TrashModel
 from ..training_dashboard.train_model import TrainModel
 from ..expert_dashboard.exp_model import ExpertModel
+from ..prediction_dashboard.pred_model import PredModel
 
 #from flask_admin.contrib.sqla.filters import  DateBetweenFilter
 from flask_admin.contrib.sqla import tools
@@ -67,6 +68,7 @@ class MyCameraDashboard(ModelView):
         qpred='Quality Prediction of the trained model for the Image either "OK" or "KO" ',
         label='Factory label of the part given by the Expert',
         filename='filename of the part in the storage drive',
+        machine_part_name='identification of the type of part used',
 
     )
 
@@ -76,12 +78,13 @@ class MyCameraDashboard(ModelView):
         'label': 'Factory Part Label',
         'filename': 'Storage Filename',
         'created_at': 'Creation Date',
+        'machine_part_name' : 'Part type ID',
       
     }
 
     " List of column to show in the table"
     column_display_pk = True
-    column_list = ( 'preview' , 'avgrating', 'qpred', 'label', 'filename', 'created_at', )
+    column_list = ( 'id' , 'preview' , 'avgrating', 'qpred', 'label', 'machine_part_name', 'created_at', )
     #column_exclude_list = ('full_store_path')
 
     # Added default sort by created date
@@ -89,17 +92,18 @@ class MyCameraDashboard(ModelView):
 
 
     """Searchable columns """
-    column_searchable_list = ( 'label', 'filename' )
+    column_searchable_list = ( 'label', 'id','machine_part_name', )
 
     column_editable_list = (  'avgrating','label',)
 
     column_filters =['avgrating',
                      'qpred', 
+                     'machine_part_name',
                      'created_at',
                      ]
 
     # Forms
-    form_columns = ( 'filename', 'label', 'avgrating','qpred',  )
+    form_columns = ( 'filename', 'label', 'avgrating','qpred','machine_part_name',  )
 
     form_widget_args = {
         'filename': {
@@ -114,7 +118,7 @@ class MyCameraDashboard(ModelView):
     # Export to csv
     can_export = True
     export_types = ['csv']
-    column_export_list = ['id', 'filename', 'label','avgrating','qpred','current_full_store_path' , 'full_thumbnails_store_path' ]
+    column_export_list = ['id', 'filename', 'label','avgrating','qpred','machine_part_name','current_full_store_path' , 'full_thumbnails_store_path' ,'created_at']
     export_max_rows = 10000
     # Index view html template
     # templates/
@@ -135,7 +139,7 @@ class MyCameraDashboard(ModelView):
 
     # To view preview image
     can_view_details = True
-    column_details_list = [ 'preview','avgrating','qpred', 'label','filename' ,'created_at' ]
+    column_details_list = [ 'preview','avgrating','qpred', 'label','machine_part_name','filename' ,'created_at' ]
     
 
 
@@ -189,6 +193,48 @@ class MyCameraDashboard(ModelView):
                 raise
 
             flash(gettext('Failed to trash the records. %(error)s', error=str(ex)), 'error')
+
+
+    @action('prediction', 'Prediction', 'Are you sure you want to predict the quality of selected records?')
+    def action_prediction(self, ids):
+        try:
+            print(f"\n\n ids : {ids}\n\n")
+
+            query = CameraModel.query.filter(CameraModel.id.in_(ids))
+            #return_url = get_redirect_target() or self.get_url('.index_view')
+            return_url = get_redirect_target() or self.get_url('admin.login_view')
+            
+            count = 0
+            
+            for m in query.all():
+                
+                pred_model_db = PredModel( id = m.id, 
+                                            full_thumbnails_store_path = m.full_thumbnails_store_path, 
+                                            label = m.label,
+                                            avgrating = m.avgrating,
+                                            qpred = m.qpred,
+                                            prev_dashboard = m.current_dashboard,
+                                            current_dashboard =  'prediction',
+                                            prev_full_store_path = m.prev_full_store_path,
+                                            current_full_store_path = m.current_full_store_path,
+                                            filename = m.filename ,
+                                            machine_part_name = m.machine_part_name,
+                                            to_pred_at = datetime.now(),  
+                                            created_at = m.created_at)
+                self.session.add(pred_model_db)
+
+                count += 1
+            
+            self.session.commit()
+            flash(ngettext('The record was successfully sent for prediction.',
+                           '%(count)s records were successfully sent for predictions.',
+                           count,
+                           count=count))
+        except Exception as ex:
+            if not self.handle_view_exception(ex):
+                raise
+
+            flash(gettext('Failed to send records to predictions. %(error)s', error=str(ex)), 'error')
 
 
 
@@ -494,7 +540,7 @@ class MyCameraDashboard(ModelView):
             os.makedirs(directory)
 
         #images_direct_split = [f'{img_id}', f'{img_id}']
-        """
+        
         #print(f"\n\n Devices used in the example: ")
         # open Thermal 
         cam_therm = create_thermal()
@@ -544,7 +590,7 @@ class MyCameraDashboard(ModelView):
 
         self.session.add(CameraModel_db)
         self.session.commit()
-        """
+        
         flash(f"Image #{img_id} was successfully captured")
         #return self.render("admin/Camera_Dashboard/complete.html")
         #return self.render("admin/Camera_Dashboard/gallery.html", directory=[f'{img_id}'], image_names=[thumb_name], zip = zip)

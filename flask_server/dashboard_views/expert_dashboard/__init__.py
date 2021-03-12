@@ -59,6 +59,7 @@ class MyExpertDashboard(ModelView):
         qpred='Quality Prediction of the trained model for the Image either "OK" or "KO" ',
         label='Factory label of the part given by the Expert',
         filename='filename of the part in the storage drive',
+        machine_part_name='identification of the type of part used',
 
     )
 
@@ -68,11 +69,12 @@ class MyExpertDashboard(ModelView):
         'label': 'Factory Part Label',
         'filename': 'Storage Filename',
         'created_at': 'Creation Date',
+        'machine_part_name' : 'Part type ID',
     }
 
     " List of column to show in the table"
     column_display_pk = True
-    column_list = ( 'preview' , 'avgrating', 'qpred', 'label', 'filename','created_at','prev_dashboard', )
+    column_list = ( 'id','preview' , 'avgrating', 'qpred', 'label', 'machine_part_name', 'created_at', )
     #column_exclude_list = ('current_full_store_path')
 
     # Added default sort by created date
@@ -80,17 +82,18 @@ class MyExpertDashboard(ModelView):
 
 
     """Searchable columns """
-    column_searchable_list = ( 'label', 'filename' )
+    column_searchable_list = ( 'label', 'id','machine_part_name', )
 
     column_editable_list = ( 'avgrating', 'label')
 
     column_filters = ['avgrating',
-                     'qpred', 
+                     'qpred',
+                     'machine_part_name', 
                      'created_at',
                      ]
 
     # Forms
-    form_columns = ( 'filename', 'label', 'avgrating','qpred' ,  )
+    form_columns = ( 'filename', 'label', 'avgrating','qpred' , 'machine_part_name', )
 
     form_widget_args = {
         'filename': {
@@ -108,13 +111,13 @@ class MyExpertDashboard(ModelView):
 
     # To view preview image
     can_view_details = True
-    column_details_list = [ 'preview','avgrating','qpred', 'label','filename' ,'created_at' ]
+    column_details_list = [ 'preview','avgrating','qpred', 'label','machine_part_name', 'filename' , 'created_at' ]
     
 
     # Export to csv
     can_export = True
     export_types = ['csv']
-    column_export_list = ['id', 'filename', 'label','avgrating','qpred','current_full_store_path' , 'full_thumbnails_store_path' ]
+    column_export_list = ['id', 'filename', 'label','avgrating','qpred','machine_part_name','current_full_store_path' , 'full_thumbnails_store_path','created_at' ]
     export_max_rows = 10000
 
 

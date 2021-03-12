@@ -10,23 +10,24 @@ from ..training_dashboard.compile_fit_train import make_or_restore_model, config
 import time
 
 # Allow memory growth for the GPU
-#physical_devices = tf.config.experimental.list_physical_devices('GPU')
-#tf.config.experimental.set_memory_growth(physical_devices[0], True)
+physical_devices = tf.config.experimental.list_physical_devices('GPU')
+tf.config.experimental.set_memory_growth(physical_devices[0], True)
+"""
 gpus = tf.config.list_physical_devices('GPU')
 if gpus:
   # Restrict TensorFlow to only allocate 1GB of memory on the first GPU
   try:
     tf.config.experimental.set_virtual_device_configuration(
         gpus[0],
-        [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)])
+        [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=512)])
     logical_gpus = tf.config.experimental.list_logical_devices('GPU')
     print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
   except RuntimeError as e:
     # Virtual devices must be set before GPUs have been initialized
     print(e)
+"""
 
-
-def prediction( data_dir = '', batch_size = 2 , img_height = 256 , img_width = 256 , ml_model = None):
+def prediction( data_dir = '', batch_size = 2 , img_height = 256 , img_width = 256 , ml_model = None, class_names_list = []):
     t1 = time.time()
     test_ds = tf.keras.preprocessing.image_dataset_from_directory(
                                 directory = data_dir,
@@ -36,9 +37,12 @@ def prediction( data_dir = '', batch_size = 2 , img_height = 256 , img_width = 2
                                 batch_size=batch_size,
                         )
 
-    
 
-    class_names = test_ds.class_names
+    if len(class_names_list) <= 1 :
+        class_names = test_ds.class_names
+    else:
+        class_names = class_names_list
+
     #for image_batch, labels_batch in test_ds:
     #    print(f"\n\n First image_batch.shape : {image_batch.shape}\n")
     #    print( f" First labels_batch.shape : {labels_batch.shape}\n\n")
@@ -85,9 +89,14 @@ def prediction( data_dir = '', batch_size = 2 , img_height = 256 , img_width = 2
 
     accuracy = accuracy_score( labels_list , predictions_list)
     print(f"\n\n accuracy :\n {accuracy }")
-
+    
+    
     class_pred = [0 if accuracy > 0.5 else 1]
-    class_pred = class_names[class_pred[0]]
+    if len(class_names) == 1 :
+        class_pred = [ class_names[0] if accuracy > 0.5 else 'Not'][0]
+    elif len(class_names) > 1 :
+        class_pred = class_names[class_pred[0]]
+
     print(f"\n\n class_pred :\n {class_pred }")
 
     print(f"\n\ntime to make all batch loop : {time.time()-t2}")
@@ -97,7 +106,20 @@ def prediction( data_dir = '', batch_size = 2 , img_height = 256 , img_width = 2
     return accuracy, class_pred
     
 
+def show_bin_confusion_matrix(accuracies_list = [] , class_preds_list = []):
+    y_true_list = []
+    for accuracy , y_pred in zip ( accuracies_list , class_preds_list ):
+        if accuracy > 0.5 :
+            y_true_list.append(f"Hot")
+        else:
+            y_true_list.append(f"Cold")
+    
+    confusion =  confusion_matrix( y_true_list  , class_preds_list)
+    print(f"\n\n Confusion Matrix:\n {confusion}")    
 
+    return confusion
+    
+    
 
 
 """

@@ -66,6 +66,7 @@ class MyTrainingDashboard(ModelView):
         qpred='Quality Prediction of the trained model for the Image either "OK" or "KO" ',
         label='Factory label of the part given by the Expert',
         filename='filename of the part in the storage drive',
+        machine_part_name='identification of the type of part used',
 
     )
 
@@ -75,12 +76,13 @@ class MyTrainingDashboard(ModelView):
         'label': 'Factory Part Label',
         'filename': 'Storage Filename',
         'created_at': 'Creation Date',
-        'to_train_at': 'Sent to training Date'
+        'to_train_at': 'Sent to training Date',
+        'machine_part_name' : 'Part type ID',
     }
 
     " List of column to show in the table"
     column_display_pk = True
-    column_list = ( 'id', 'preview' , 'avgrating', 'qpred', 'label', 'filename','trained_at', )
+    column_list = ( 'id', 'preview' , 'avgrating', 'qpred', 'label', 'machine_part_name', 'trained_at', )
     #column_exclude_list = ('full_store_path')
 
     # Added default sort by sent to trainig date
@@ -90,11 +92,11 @@ class MyTrainingDashboard(ModelView):
     """Default list view template"""
 
     """Searchable columns """
-    column_searchable_list = ( 'label', 'filename' )
+    column_searchable_list = ( 'label', 'id', 'machine_part_name' )
 
     column_filters =['avgrating',
                      'qpred', 
-                     
+                     'machine_part_name',
                      'created_at',
                      'to_train_at',
                      ]
@@ -113,7 +115,7 @@ class MyTrainingDashboard(ModelView):
 
     # To view preview image
     can_view_details = True
-    column_details_list = [ 'preview','avgrating','qpred', 'label','filename' ,'created_at','trashed_at' ]
+    column_details_list = [ 'preview','avgrating','qpred', 'label','machine_part_name', 'filename' ,'created_at','trashed_at' ]
     
     # 
 
@@ -217,9 +219,15 @@ class MyTrainingDashboard(ModelView):
 
         models = self.session.query(TrainModel).all()
         if models is not None:
-            dataset_csv_path_list = dataset_maker(models = models, 
-                                                to_csv_path = self.ml_training_path , 
-                                                is_training = True)
+
+            trash_delete(imgs_main_dir = os.path.join(self.ml_training_path) , img_thumb_path = '' )
+
+            dataset_csv_path_list = dataset_maker( models = models, 
+                                                   to_csv_path = self.ml_training_path , 
+                                                   is_training = True,
+                                                   is_hot_cold = True,
+                                                 )
+            
 
         dataset_csv_path_list = glob.glob( f"{self.ml_training_path}/*.csv")
         print( f" len dataset_csv_path_list : { len(dataset_csv_path_list) }")
@@ -234,6 +242,8 @@ class MyTrainingDashboard(ModelView):
                      img_width = 256,
                      checkpoint_dir = os.path.join( self.ml_model_path , "hot_cold_test_architecture", "model" ) ,
                      )
+        
+        trash_delete(imgs_main_dir = os.path.join(self.ml_training_path) , img_thumb_path = '' )
 
         flash(f" training #{img_id} was successfully started", category='success')
 

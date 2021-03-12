@@ -8,7 +8,7 @@ import cv2
 
 #######################################################################################
 
-def dataset_maker(models = None, to_csv_path = '', is_training = True, is_one_model = False, is_binary_class = True):
+def dataset_maker(models = None, to_csv_path = '', is_training = True, is_one_model = False, is_binary_class = True , is_hot_cold = False):
     """[summary]
 
     Args:
@@ -41,7 +41,12 @@ def dataset_maker(models = None, to_csv_path = '', is_training = True, is_one_mo
             if (m.avgrating is not None) or (m.avgrating != -99) or (m.avgrating !=''):
                 if is_binary_class:
                     avgrating = m.avgrating
-                    avgrating = [ 'Two' if int(ratings_dict[avgrating.value] ) > 2 else 'One' ]
+
+                    if is_hot_cold:
+                        avgrating = [ 'Cold' if int(ratings_dict[avgrating.value] ) > 2 else 'Hot' ]
+                    else:
+                        avgrating = [ 'Two' if int(ratings_dict[avgrating.value] ) > 2 else 'One' ]
+
                     images_labels_list.append(avgrating[0])
                     images_dirs_list.append( os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR') , m.current_full_store_path ) )
         print(f"\n\n Number of models {len(models)}")
@@ -50,7 +55,12 @@ def dataset_maker(models = None, to_csv_path = '', is_training = True, is_one_mo
         if (m.avgrating is not None) or (m.avgrating != -99) or (m.avgrating !=''):
             if is_binary_class:
                 avgrating = m.avgrating
-                avgrating = [ 'Two' if int(ratings_dict[avgrating.value] ) > 2 else 'One' ]
+
+                if is_hot_cold:
+                    avgrating = [ 'Cold' if int(ratings_dict[avgrating.value] ) > 2 else 'Hot' ]
+                else:
+                    avgrating = [ 'Two' if int(ratings_dict[avgrating.value] ) > 2 else 'One' ]
+
                 images_labels_list.append(avgrating[0])
                 images_dirs_list.append( os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR') , m.current_full_store_path ) )
 
@@ -108,6 +118,8 @@ def labeled_dirs_maker_from_csv(dirs_path_list = []):
 
             if not os.path.exists(new_dir):
                 os.makedirs( new_dir )
+
+    return new_dir_name
 
 ##############################################################################
 

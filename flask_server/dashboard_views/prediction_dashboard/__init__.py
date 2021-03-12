@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 import uuid
 
-from .utils import prediction
+from .utils import prediction, show_bin_confusion_matrix
 from ..camera_dashboard.utils import DirectoryZip
 from ..trash_dashboard.utils import trash_delete
 from ..training_dashboard.utils import ( dataset_maker, 
@@ -232,8 +232,11 @@ class MyPredictionDashboard(ModelView):
 
         if not os.path.exists(self.ml_model_path):
             raise f"Model Path ERROR : \n\t{ml_model_dir} does not exists \n Please train your model first"
-        #  os.path.join( self.ml_model_path , "expert_architecture", "model" ) ,
-        ml_model = make_or_restore_model( checkpoint_dir = os.path.join( self.ml_model_path , "expert_architecture", "model" ), 
+
+        #  os.path.join( self.ml_model_path , "expert_architecture", "model" ) , 
+        # os.path.join( self.ml_model_path , "hot_cold_test_architecture", "model" ) 
+
+        ml_model = make_or_restore_model( checkpoint_dir = os.path.join( self.ml_model_path , "hot_cold_test_architecture", "model" ), 
                                           img_height = img_height, 
                                           img_width = img_width,
                                         )
@@ -241,19 +244,28 @@ class MyPredictionDashboard(ModelView):
         models = self.session.query(PredModel).all()
 
         if models is not None:
-            
+
+            accuracies_list = [] 
+            class_preds_list = []
+            class_true_list = []
+
             for model in models:
                 trash_delete(imgs_main_dir = os.path.join(self.ml_testing_path) , img_thumb_path = '' )
 
-                dataset_csv_path_list = dataset_maker(models = model, 
-                                                to_csv_path = self.ml_testing_path , 
-                                                is_training = True,
-                                                is_one_model = True)
+                dataset_csv_path_list = dataset_maker( models = model, 
+                                                       to_csv_path = self.ml_testing_path , 
+                                                       is_training = True,
+                                                       is_one_model = True,
+                                                       is_hot_cold = True,
+                                                      )
             
                 dataset_csv_path_list = glob.glob( f"{self.ml_testing_path}/*.csv")
                 print( f" len dataset_csv_path_list : { len(dataset_csv_path_list) }")
 
-                labeled_dirs_maker_from_csv(dirs_path_list = dataset_csv_path_list)
+                class_name = labeled_dirs_maker_from_csv(dirs_path_list = dataset_csv_path_list)
+                if class_name not in class_true_list:
+                    class_true_list.append(class_name)
+                    print(f"class_true_list : {class_true_list}")
 
                 copy_images_to_label_from_csv(dataset_csv_path_list = dataset_csv_path_list  , is_hot_cold = True)
 
@@ -262,16 +274,27 @@ class MyPredictionDashboard(ModelView):
                                                 img_height = img_height , 
                                                 img_width = img_width , 
                                                 ml_model = ml_model,
+                                                class_names_list = class_true_list,
                                                 )
+
+                accuracies_list.append(accuracy)
+                class_preds_list.append(class_pred)
+                
                 model.qpred = class_pred
+                model.pred_at = datetime.now()
+
                 #print( f"\n\n  model.prev_dashboard : { model.prev_dashboard }\n\n")
                 dash_model_db = self.dashboards_dict[model.prev_dashboard].query.get(model.id)
                 dash_model_db.qpred = class_pred
+                dash_model_db.pred_at = datetime.now()
+
                 trash_delete(imgs_main_dir = os.path.join(self.ml_testing_path) , img_thumb_path = '' )
 
             self.session.commit()
 
-        flash(f" training #{img_id} was successfully started", category='success')
+            confusion_matrix = show_bin_confusion_matrix(accuracies_list = accuracies_list , class_preds_list = class_preds_list)
+
+            flash(f"The training was successfully started \nConfusion Matrix\n\t{confusion_matrix}", category='success')
 
         return jsonify({'result':'success'})
     

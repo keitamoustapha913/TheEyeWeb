@@ -12,6 +12,10 @@ from tensorflow.keras.models import Sequential
 from matplotlib import pyplot as plt
 import pathlib
 
+physical_devices = tf.config.experimental.list_physical_devices('GPU')
+tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
+"""
 # Allow memory growth for the GPU
 #physical_devices = tf.config.experimental.list_physical_devices('GPU')
 #tf.config.experimental.set_memory_growth(physical_devices[0], True)
@@ -22,13 +26,13 @@ if gpus:
   try:
     tf.config.experimental.set_virtual_device_configuration(
         gpus[0],
-        [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=1024)])
+        [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=512)])
     logical_gpus = tf.config.experimental.list_logical_devices('GPU')
     print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
   except RuntimeError as e:
     # Virtual devices must be set before GPUs have been initialized
     print(e)
-
+"""
 
 AUTOTUNE = tf.data.AUTOTUNE
 
@@ -92,19 +96,21 @@ def compile_fit( data_dir = '', batch_size = 2 , img_height = 256 , img_width = 
         # We include the training loss in the saved model name.
         keras.callbacks.ModelCheckpoint(
                             filepath=checkpoint_dir + "/ckpt-val_accuracy-{epoch:02d}-{val_accuracy:.2f}",
-                            monitor='val_accuracy',
-                            mode='max',
+                            monitor='val_loss',
+                            mode='min',
+                            save_best_only=True,
+                            save_weights_only = False,
                            ) ,
 
         keras.callbacks.CSVLogger(filename = os.path.join( os.path.dirname(checkpoint_dir), "logs","ml_train_log.csv" ), separator=",", append=False),
 
         #PlotLearning(filename= os.path.join( checkpoint_dir,"ml_plot_learning_{val_accuracy:.2f}.png" ) ),
         
-        keras.callbacks.EarlyStopping( monitor="val_accuracy",
+        keras.callbacks.EarlyStopping( monitor="val_loss",
                             min_delta=0.00001,
                             patience=10,
                             verbose=1,
-                            mode="max",
+                            mode="min",
                             baseline=None,
                             restore_best_weights=True,
                         ),
@@ -120,30 +126,6 @@ def compile_fit( data_dir = '', batch_size = 2 , img_height = 256 , img_width = 
             callbacks=callbacks,
         )
     
-    
-    ###2 conv and pool layers. with some normalization and drops in between.
-    
-    INPUT_SHAPE = (img_height, img_width, 3)   #change to (SIZE, SIZE, 3)
-
-    model = Sequential()
-    model.add(Conv2D(32, (3, 3), input_shape=INPUT_SHAPE))
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-
-    model.add(Conv2D(32, (3, 3)))
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-
-    model.add(Conv2D(64, (3, 3)))
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-
-    model.add(Flatten())
-    model.add(Dense(64))
-    model.add(Activation('relu'))
-    model.add(Dropout(0.5))
-    model.add(Dense(1))
-    model.add(Activation('sigmoid'))
     
 
 

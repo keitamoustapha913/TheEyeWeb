@@ -19,10 +19,15 @@ def trash_delete(imgs_main_dir = '', img_thumb_path = '', extensions = ('*.png',
         for img in image_path_list:
             os.unlink(img)
 
+    empty_dirs_list = os.listdir(imgs_main_dir)
+    for empty_dir in empty_dirs_list:
+        os.rmdir( os.path.join(imgs_main_dir, empty_dir) )
+    # os.rmdir(dir_path)
+
     if os.path.isfile(img_thumb_path):
         #print(f"\n\n img_thumb_path : {img_thumb_path}")
         os.unlink(img_thumb_path)
 
-    print(f"\n\n img_thumb_path : {img_thumb_path} \n\n and \n\n imgs_main_dir : {image_path_list}")
+    #print(f"\n\n img_thumb_path : {img_thumb_path} \n\n and \n\n imgs_main_dir : {image_path_list}")
 
     
