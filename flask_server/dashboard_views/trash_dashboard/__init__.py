@@ -194,8 +194,8 @@ class MyTrashDashboard(ModelView):
                 count = 0
 
                 for m in query.all():
-                    imgs_main_dir = m.current_full_store_path
-                    img_thumb_path =os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR'),m.full_thumbnails_store_path) 
+                    imgs_main_dir = os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR'), m.current_full_store_path ) 
+                    img_thumb_path = os.path.join( os.environ.get('SYMME_EYE_APPLICATION_DIR'),m.full_thumbnails_store_path) 
                     trash_delete(imgs_main_dir = imgs_main_dir, img_thumb_path = img_thumb_path )
 
                     if self.delete_model(m):
