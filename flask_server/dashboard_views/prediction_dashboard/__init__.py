@@ -292,10 +292,12 @@ class MyPredictionDashboard(ModelView):
 
             self.session.commit()
 
-            confusion_matrix = show_bin_confusion_matrix(accuracies_list = accuracies_list , class_preds_list = class_preds_list)
+            json_dump_confusion_matrix = show_bin_confusion_matrix(accuracies_list = accuracies_list , class_preds_list = class_preds_list)
 
-            flash(f"The training was successfully started \nConfusion Matrix\n\t{confusion_matrix}", category='success')
+            #flash(f"The training was successfully started \nConfusion Matrix\n\t{json_dump_confusion_matrix}", category='success')
 
-        return jsonify({'result':'success'})
+        #return redirect(url_for('.index_view', json='meee'))
+        #result = { 'confusion_matrix':confusion_matrix, 'label':class_labels } 
+        return jsonify( json_dump_confusion_matrix ) 
     
 

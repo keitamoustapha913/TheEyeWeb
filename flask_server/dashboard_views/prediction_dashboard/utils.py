@@ -1,17 +1,37 @@
 #!/usr/bin/env python3
 
 import os
+import json 
+import pandas as pd
+import numpy as np 
+
+from string import ascii_uppercase
+
 
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers, metrics , optimizers , losses , models
 from sklearn.metrics import classification_report, confusion_matrix ,accuracy_score
+from sklearn.utils.multiclass import unique_labels
 from ..training_dashboard.compile_fit_train import make_or_restore_model, configure_for_performance
 import time
 
 # Allow memory growth for the GPU
-physical_devices = tf.config.experimental.list_physical_devices('GPU')
-tf.config.experimental.set_memory_growth(physical_devices[0], True)
+#physical_devices = tf.config.experimental.list_physical_devices('GPU')
+#tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
+gpus = tf.config.list_physical_devices('GPU')
+if gpus:
+  try:
+    # Currently, memory growth needs to be the same across GPUs
+    for gpu in gpus:
+      tf.config.experimental.set_memory_growth(gpu, True)
+    logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+    print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+  except RuntimeError as e:
+    # Memory growth must be set before GPUs have been initialized
+    print(e)
+
 """
 gpus = tf.config.list_physical_devices('GPU')
 if gpus:
@@ -104,7 +124,20 @@ def prediction( data_dir = '', batch_size = 2 , img_height = 256 , img_width = 2
     print(f"\n\n\ntime to make all predictions : {time.time()-t1}\n\n\n")
 
     return accuracy, class_pred
-    
+
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
+#a = np.array([[1, 2, 3], [4, 5, 6]])
+#print(a.shape)
+#json_dump = json.dumps({'a': a, 'aa': [2, (2, 3, 4), a], 'bb': [2]}, cls=NumpyEncoder)
+#print(json_dump)
+
+
 
 def show_bin_confusion_matrix(accuracies_list = [] , class_preds_list = []):
     y_true_list = []
@@ -115,9 +148,26 @@ def show_bin_confusion_matrix(accuracies_list = [] , class_preds_list = []):
             y_true_list.append(f"Cold")
     
     confusion =  confusion_matrix( y_true_list  , class_preds_list)
-    print(f"\n\n Confusion Matrix:\n {confusion}")    
+    print(f"\n\n Confusion Matrix:\n {confusion}")  
 
-    return confusion
+    #columns = ['%s' %(i) for i in list(ascii_uppercase)[0:len(np.unique(y_true_list))]]
+
+    labels = unique_labels( y_true_list, class_preds_list )
+
+    print(f"\n\n labels:\n {labels}")    
+    # https://stackoverflow.com/questions/12897374/get-unique-values-from-a-list-in-python
+    #confusion = np.array( confusion )  
+    #labels = list( set( class_preds_list ) )
+
+    #df = pd.DataFrame( confusion , index=labels, columns=labels)
+    #df = pd.DataFrame( {'actual_class':y_true_list, 'predicted_class': class_preds_list})
+    #unique_class_df = df.drop_duplicates(['actual_class','predicted_class']).sort_values("actual_class")
+    #print(f"\n\n unique_class_df:\n {unique_class_df}")
+    #confusion_html = df.to_html()
+    result = { 'confusion_matrix':confusion.tolist(), 'labels':labels.tolist() }
+    #json_dump = json.dumps( result , cls=NumpyEncoder)
+
+    return result
     
     
 
